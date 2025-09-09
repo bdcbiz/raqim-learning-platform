@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub:*)",
+      "Bash(flutter:*)",
+      "Read(//c/Users/win/Downloads/**)",
+      "Bash(adb:*)",
+      "Bash(emulator:*)",
+      "Bash(start cmd /c \"cd /d %LOCALAPPDATA%\\Android\\Sdk\\emulator && emulator -avd Pixel_6\")",
+      "Bash(timeout:*)",
+      "Bash(copy:*)",
+      "Bash(C:/Users/win/AppData/Local/Android/Sdk/platform-tools/adb emu kill:*)",
+      "Bash(r)",
+      "Bash(C:/Users/win/AppData/Local/Android/Sdk/platform-tools/adb devices)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(del nul)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
