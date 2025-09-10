@@ -14,7 +14,13 @@
       "Bash(C:/Users/win/AppData/Local/Android/Sdk/platform-tools/adb devices)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(git commit:*)",
+      "Bash(echo \"# بعد إنشاء repository على GitHub، استخدمي الأوامر التالية:\n\n# أضيفي remote (استبدلي YOUR_USERNAME باسم المستخدم الخاص بك)\ngit remote add origin https://github.com/YOUR_USERNAME/raqim-learning-platform.git\n\n# ارفعي الكود\ngit branch -M main\ngit push -u origin main\n\n# إذا كان لديك GitHub CLI مثبت، يمكنك استخدام:\n# gh repo create raqim-learning-platform --public --source=. --push\")",
+      "Bash(gh:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
