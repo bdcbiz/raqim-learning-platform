@@ -72,7 +72,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
     final isWideScreen = size.width > 900;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppColors.primaryBackground,
       appBar: AppBar(
         title: const Text('الدفع بالبطاقة الائتمانية'),
         centerTitle: true,
@@ -119,8 +119,8 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                AppTheme.primaryColor,
-                                AppTheme.primaryColor.withOpacity(0.8),
+                                AppColors.primaryColor,
+                                AppColors.primaryColor.withOpacity(0.8),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -128,7 +128,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                color: AppColors.primaryColor.withOpacity(0.3),
                                 spreadRadius: 2,
                                 blurRadius: 10,
                               ),
@@ -461,7 +461,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                           '${widget.paymentData['amount'].toStringAsFixed(2)} ر.س',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            color: AppColors.primaryColor,
                           ),
                         ),
                       ],

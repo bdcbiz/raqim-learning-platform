@@ -47,7 +47,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           AppLocalizations.of(context)?.translate('myCoursesTitle') ?? 'My Courses',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: AppColors.primaryColor,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
@@ -98,7 +98,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                             icon: const Icon(Icons.search),
                             label: Text(AppLocalizations.of(context)?.translate('exploreCourses') ?? 'Explore Courses'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
+                              backgroundColor: AppColors.primaryColor,
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             ),
                           ),
@@ -230,7 +230,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                                             Text(
                                               '${progress.overallProgress.toStringAsFixed(0)}%',
                                               style: TextStyle(
-                                                color: progress.isCompleted ? Colors.green : AppTheme.primaryColor,
+                                                color: progress.isCompleted ? Colors.green : AppColors.primaryColor,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -241,7 +241,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                                           value: progress.overallProgress / 100,
                                           backgroundColor: Colors.grey[300],
                                           valueColor: AlwaysStoppedAnimation<Color>(
-                                            progress.isCompleted ? Colors.green : AppTheme.primaryColor,
+                                            progress.isCompleted ? Colors.green : AppColors.primaryColor,
                                           ),
                                           minHeight: 6,
                                         ),
@@ -292,7 +292,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                                                   : AppLocalizations.of(context)?.translate('continueLeaming') ?? 'Continue Learning',
                                             ),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppTheme.primaryColor,
+                                              backgroundColor: AppColors.primaryColor,
                                               padding: const EdgeInsets.symmetric(vertical: 10),
                                             ),
                                           ),
@@ -340,10 +340,10 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
         });
       },
       backgroundColor: Colors.grey[200],
-      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-      checkmarkColor: AppTheme.primaryColor,
+      selectedColor: AppColors.primaryColor.withOpacity(0.2),
+      checkmarkColor: AppColors.primaryColor,
       labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primaryColor : Colors.grey[700],
+        color: isSelected ? AppColors.primaryColor : Colors.grey[700],
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );

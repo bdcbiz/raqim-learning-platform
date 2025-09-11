@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/course_model.dart';
+import '../../../services/api_service.dart';
+import '../../../services/cache_service.dart';
 
 class CoursesProvider extends ChangeNotifier {
   List<CourseModel> _courses = [];
@@ -18,7 +20,12 @@ class CoursesProvider extends ChangeNotifier {
   String get selectedCategory => _selectedCategory;
 
   CoursesProvider() {
-    loadCourses();
+    _initializeProvider();
+  }
+
+  Future<void> _initializeProvider() async {
+    await CacheService.init();
+    await loadCourses();
   }
 
   Future<void> loadCourses() async {
@@ -26,17 +33,143 @@ class CoursesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      
+      // Try to load from cache first
+      final cachedCourses = CacheService.getCachedCourses();
+      if (cachedCourses != null && cachedCourses.isNotEmpty) {
+        _courses = cachedCourses;
+        _filteredCourses = _courses;
+        
+        // Load enrolled courses from cache
+        final enrolledIds = CacheService.getCachedEnrolledCourses();
+        if (enrolledIds != null) {
+          for (var course in _courses) {
+            if (enrolledIds.contains(course.id)) {
+              final index = _courses.indexOf(course);
+              _courses[index] = CourseModel(
+                id: course.id,
+                title: course.title,
+                description: course.description,
+                thumbnailUrl: course.thumbnailUrl,
+                promoVideoUrl: course.promoVideoUrl,
+                instructorId: course.instructorId,
+                instructorName: course.instructorName,
+                instructorBio: course.instructorBio,
+                instructorPhotoUrl: course.instructorPhotoUrl,
+                level: course.level,
+                category: course.category,
+                objectives: course.objectives,
+                requirements: course.requirements,
+                modules: course.modules,
+                price: course.price,
+                rating: course.rating,
+                totalRatings: course.totalRatings,
+                enrolledStudents: course.enrolledStudents,
+                totalDuration: course.totalDuration,
+                createdAt: course.createdAt,
+                updatedAt: course.updatedAt,
+                isFree: course.isFree,
+                language: course.language,
+                reviews: course.reviews,
+                isEnrolled: true,
+              );
+            }
+          }
+        }
+        
+        _isLoading = false;
+        notifyListeners();
+        
+        // Refresh from server in background if needed
+        if (CacheService.shouldRefreshCache()) {
+          await _refreshCoursesFromServer();
+        }
+      } else {
+        // No cache, load from server
+        await _refreshCoursesFromServer();
+      }
+    } catch (e) {
+      // On error, use mock data
       _courses = _generateMockCourses();
       _filteredCourses = _courses;
       
       _isLoading = false;
       notifyListeners();
-    } catch (e) {
-      _error = 'فشل تحميل الدورات: ${e.toString()}';
+    }
+  }
+
+  Future<void> _refreshCoursesFromServer() async {
+    try {
+      final response = await ApiService.getCourses();
+      
+      if (response['courses'] != null) {
+        _courses = (response['courses'] as List)
+            .map((json) => CourseModel.fromJson(json))
+            .toList();
+            
+        // Cache the courses
+        await CacheService.cacheCourses(_courses);
+        
+        // Get enrolled courses and cache them
+        try {
+          final enrolledResponse = await ApiService.getEnrolledCourses();
+          if (enrolledResponse['courses'] != null) {
+            final enrolledIds = (enrolledResponse['courses'] as List)
+                .map((course) => course['_id']?.toString() ?? course['id']?.toString() ?? '')
+                .where((id) => id.isNotEmpty)
+                .toList();
+            
+            await CacheService.cacheEnrolledCourses(enrolledIds);
+            
+            // Mark enrolled courses
+            for (var course in _courses) {
+              if (enrolledIds.contains(course.id)) {
+                final index = _courses.indexOf(course);
+                _courses[index] = CourseModel(
+                  id: course.id,
+                  title: course.title,
+                  description: course.description,
+                  thumbnailUrl: course.thumbnailUrl,
+                  promoVideoUrl: course.promoVideoUrl,
+                  instructorId: course.instructorId,
+                  instructorName: course.instructorName,
+                  instructorBio: course.instructorBio,
+                  instructorPhotoUrl: course.instructorPhotoUrl,
+                  level: course.level,
+                  category: course.category,
+                  objectives: course.objectives,
+                  requirements: course.requirements,
+                  modules: course.modules,
+                  price: course.price,
+                  rating: course.rating,
+                  totalRatings: course.totalRatings,
+                  enrolledStudents: course.enrolledStudents,
+                  totalDuration: course.totalDuration,
+                  createdAt: course.createdAt,
+                  updatedAt: course.updatedAt,
+                  isFree: course.isFree,
+                  language: course.language,
+                  reviews: course.reviews,
+                  isEnrolled: true,
+                );
+              }
+            }
+          }
+        } catch (enrollError) {
+          print('Error loading enrolled courses: $enrollError');
+        }
+        
+        await CacheService.updateLastSync();
+      } else {
+        // Fallback to mock data if API returns empty
+        _courses = _generateMockCourses();
+      }
+      
+      _filteredCourses = _courses;
+      
       _isLoading = false;
       notifyListeners();
+    } catch (e) {
+      throw e;
     }
   }
 
@@ -63,40 +196,73 @@ class CoursesProvider extends ChangeNotifier {
       (course) => course.id == courseId,
       orElse: () => _courses.first,
     );
+    
+    // Add to recently viewed
+    CacheService.addToRecentlyViewed(courseId);
+    
     notifyListeners();
   }
 
-  Future<void> enrollInCourse(String courseId) async {
-    final courseIndex = _courses.indexWhere((c) => c.id == courseId);
-    if (courseIndex != -1) {
-      final course = _courses[courseIndex];
-      _courses[courseIndex] = CourseModel(
-        id: course.id,
-        title: course.title,
-        description: course.description,
-        thumbnailUrl: course.thumbnailUrl,
-        promoVideoUrl: course.promoVideoUrl,
-        instructorId: course.instructorId,
-        instructorName: course.instructorName,
-        instructorBio: course.instructorBio,
-        instructorPhotoUrl: course.instructorPhotoUrl,
-        level: course.level,
-        category: course.category,
-        objectives: course.objectives,
-        requirements: course.requirements,
-        modules: course.modules,
-        price: course.price,
-        rating: course.rating,
-        totalRatings: course.totalRatings,
-        enrolledStudents: course.enrolledStudents + 1,
-        totalDuration: course.totalDuration,
-        createdAt: course.createdAt,
-        updatedAt: course.updatedAt,
-        isFree: course.isFree,
-        language: course.language,
-        reviews: course.reviews,
-      );
+  Future<Map<String, dynamic>?> enrollInCourse(String courseId) async {
+    try {
+      // Call the API to enroll in the course
+      final response = await ApiService.enrollInCourse(courseId);
+      
+      // Check if it's a paid course (402 status)
+      if (response['success'] == false && response['error'] != null && response['error'].toString().contains('paid course')) {
+        // Throw error with the response details for the UI to handle
+        throw Exception('402: ${response['error']}');
+      }
+      
+      // Update local state only if enrollment is successful
+      if (response['success'] == true) {
+        final courseIndex = _courses.indexWhere((c) => c.id == courseId);
+        if (courseIndex != -1) {
+          final course = _courses[courseIndex];
+          _courses[courseIndex] = CourseModel(
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            thumbnailUrl: course.thumbnailUrl,
+            promoVideoUrl: course.promoVideoUrl,
+            instructorId: course.instructorId,
+            instructorName: course.instructorName,
+            instructorBio: course.instructorBio,
+            instructorPhotoUrl: course.instructorPhotoUrl,
+            level: course.level,
+            category: course.category,
+            objectives: course.objectives,
+            requirements: course.requirements,
+            modules: course.modules,
+            price: course.price,
+            rating: course.rating,
+            totalRatings: course.totalRatings,
+            enrolledStudents: course.enrolledStudents + 1,
+            totalDuration: course.totalDuration,
+            createdAt: course.createdAt,
+            updatedAt: course.updatedAt,
+            isFree: course.isFree,
+            language: course.language,
+            reviews: course.reviews,
+            isEnrolled: true, // Mark as enrolled
+          );
+          
+          // Update cached enrolled courses
+          final enrolledIds = CacheService.getCachedEnrolledCourses() ?? [];
+          if (!enrolledIds.contains(courseId)) {
+            enrolledIds.add(courseId);
+            await CacheService.cacheEnrolledCourses(enrolledIds);
+          }
+          
+          notifyListeners();
+        }
+      }
+      
+      return response;
+    } catch (e) {
+      _error = e.toString();
       notifyListeners();
+      rethrow; // Re-throw to let the calling widget handle the error
     }
   }
 
@@ -114,6 +280,7 @@ class CoursesProvider extends ChangeNotifier {
         instructorPhotoUrl: 'https://picsum.photos/150/150',
         level: 'مبتدئ',
         category: 'تعلم الآلة',
+        isEnrolled: true, // User is enrolled
         objectives: [
           'فهم أساسيات تعلم الآلة',
           'بناء نماذج بسيطة',

@@ -178,7 +178,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+            borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -211,7 +211,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: AppTheme.primaryColor),
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.primaryColor),
             onPressed: () => context.go('/forgot-password'),
           ),
         ),
@@ -230,8 +230,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.primaryColor.withOpacity(0.1),
-                          AppTheme.secondaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withOpacity(0.1),
+                          AppColors.primaryColor.withOpacity(0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -244,7 +244,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         Icon(
                           Icons.mark_email_read,
                           size: 60,
-                          color: AppTheme.primaryColor,
+                          color: AppColors.primaryColor,
                         ),
                         Positioned(
                           right: 20,
@@ -252,7 +252,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: AppTheme.secondaryColor,
+                              color: AppColors.primaryColor,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -292,7 +292,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         text: widget.email,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
+                          color: AppColors.primaryColor,
                         ),
                       ),
                     ],
@@ -338,7 +338,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleVerifyOtp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: AppColors.primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -383,7 +383,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           : '${AppLocalizations.of(context)?.translate('resend') ?? 'Resend'} (${_resendTimer}s)',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: _canResend ? AppTheme.primaryColor : Colors.grey,
+                          color: _canResend ? AppColors.primaryColor : Colors.grey,
                           fontSize: 15,
                         ),
                       ),
@@ -409,9 +409,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
-                    AppTheme.secondaryColor,
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor,
                   ],
                 ),
               ),
@@ -448,7 +448,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               child: Icon(
                                 Icons.pin,
                                 size: 24,
-                                color: AppTheme.primaryColor,
+                                color: AppColors.primaryColor,
                               ),
                             ),
                           ),
@@ -516,7 +516,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 text: widget.email,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
+                                  color: AppColors.primaryColor,
                                 ),
                               ),
                             ],
@@ -559,7 +559,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _handleVerifyOtp,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
+                              backgroundColor: AppColors.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -596,7 +596,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   : '${AppLocalizations.of(context)?.translate('resend') ?? 'Resend'} (${_resendTimer}s)',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: _canResend ? AppTheme.primaryColor : Colors.grey,
+                                  color: _canResend ? AppColors.primaryColor : Colors.grey,
                                 ),
                               ),
                             ),

@@ -75,8 +75,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primaryColor.withOpacity(0.1),
-              AppTheme.secondaryColor.withOpacity(0.1),
+              AppColors.primaryColor.withOpacity(0.1),
+              AppColors.primaryColor.withOpacity(0.1),
             ],
           ),
         ),
@@ -323,7 +323,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
           value,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
-            color: highlight ? AppTheme.primaryColor : Colors.black87,
+            color: highlight ? AppColors.primaryColor : Colors.black87,
           ),
         ),
       ],

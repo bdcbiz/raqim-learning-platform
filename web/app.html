@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة رقيم التعليمية</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="images/logo.png" alt="رقيم" height="40">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/courses">الدورات</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">عن المنصة</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact">اتصل بنا</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button class="btn btn-outline-light me-2" id="loginBtn">تسجيل الدخول</button>
+                    <button class="btn btn-light" id="signupBtn">حساب جديد</button>
+                    <div id="userMenu" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section py-5 bg-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">تعلم بطريقة تفاعلية ومبتكرة</h1>
+                    <p class="lead mb-4">منصة رقيم التعليمية توفر لك أفضل الدورات في البرمجة، الرياضيات، والعلوم بأسلوب عصري وممتع</p>
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-primary btn-lg">ابدأ التعلم الآن</button>
+                        <button class="btn btn-outline-primary btn-lg">استكشف الدورات</button>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <img src="images/hero-image.png" alt="التعلم التفاعلي" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section py-4">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control" placeholder="ابحث عن دورة..." id="searchInput">
+                        <button class="btn btn-primary" type="button" onclick="searchCourses(document.getElementById('searchInput').value)">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Courses -->
+    <section class="courses-section py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">الدورات المميزة</h2>
+            <div class="row" id="coursesContainer">
+                <!-- Courses will be loaded here dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">لماذا منصة رقيم؟</h2>
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-chalkboard-teacher fa-3x text-primary"></i>
+                    </div>
+                    <h4>معلمون خبراء</h4>
+                    <p>نخبة من أفضل المعلمين والخبراء في مجالاتهم</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-laptop-code fa-3x text-primary"></i>
+                    </div>
+                    <h4>تعلم تفاعلي</h4>
+                    <p>دروس تفاعلية مع تمارين عملية ومشاريع حقيقية</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-certificate fa-3x text-primary"></i>
+                    </div>
+                    <h4>شهادات معتمدة</h4>
+                    <p>احصل على شهادة معتمدة عند إتمام الدورة بنجاح</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="stats-section py-5">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3 mb-4">
+                    <h3 class="display-4 fw-bold text-primary">1000+</h3>
+                    <p class="lead">طالب مسجل</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h3 class="display-4 fw-bold text-primary">50+</h3>
+                    <p class="lead">دورة متاحة</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h3 class="display-4 fw-bold text-primary">30+</h3>
+                    <p class="lead">معلم خبير</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <h3 class="display-4 fw-bold text-primary">95%</h3>
+                    <p class="lead">رضا الطلاب</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5>عن رقيم</h5>
+                    <p>منصة تعليمية رائدة تهدف إلى توفير تعليم عالي الجودة للجميع</p>
+                    <div class="social-links">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>روابط سريعة</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/courses" class="text-white-50">جميع الدورات</a></li>
+                        <li><a href="/about" class="text-white-50">عن المنصة</a></li>
+                        <li><a href="/contact" class="text-white-50">اتصل بنا</a></li>
+                        <li><a href="/terms" class="text-white-50">الشروط والأحكام</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>تواصل معنا</h5>
+                    <p><i class="fas fa-envelope me-2"></i> info@raqim.edu</p>
+                    <p><i class="fas fa-phone me-2"></i> +966 50 123 4567</p>
+                    <p><i class="fas fa-map-marker-alt me-2"></i> الرياض، المملكة العربية السعودية</p>
+                </div>
+            </div>
+            <hr class="bg-white">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 منصة رقيم التعليمية. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

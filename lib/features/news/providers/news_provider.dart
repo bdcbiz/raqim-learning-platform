@@ -67,6 +67,62 @@ class NewsProvider extends ChangeNotifier {
     await loadNews();
   }
 
+  Future<void> toggleLike(String newsId) async {
+    try {
+      final newsIndex = _news.indexWhere((n) => n.id == newsId);
+      if (newsIndex != -1) {
+        final currentNews = _news[newsIndex];
+        final newLikesCount = currentNews.isLiked 
+            ? currentNews.likesCount - 1 
+            : currentNews.likesCount + 1;
+            
+        _news[newsIndex] = currentNews.copyWith(
+          isLiked: !currentNews.isLiked,
+          likesCount: newLikesCount,
+        );
+        
+        notifyListeners();
+        
+        // In production, send API request to backend
+        // await http.put(Uri.parse('${AppConstants.baseUrl}/api/v1/news/$newsId/like'));
+      }
+    } catch (e) {
+      _error = 'فشل في تحديث الإعجاب: ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> addComment(String newsId, String content) async {
+    try {
+      final newsIndex = _news.indexWhere((n) => n.id == newsId);
+      if (newsIndex != -1) {
+        final currentNews = _news[newsIndex];
+        final newComment = NewsComment(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          content: content,
+          authorName: 'المستخدم الحالي', // In production, get from auth
+          createdAt: DateTime.now(),
+        );
+        
+        final updatedComments = List<NewsComment>.from(currentNews.comments ?? []);
+        updatedComments.insert(0, newComment);
+        
+        _news[newsIndex] = currentNews.copyWith(
+          comments: updatedComments,
+          commentsCount: updatedComments.length,
+        );
+        
+        notifyListeners();
+        
+        // In production, send API request to backend
+        // await http.post(Uri.parse('${AppConstants.baseUrl}/api/v1/news/$newsId/comments'));
+      }
+    } catch (e) {
+      _error = 'فشل في إضافة التعليق: ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
   List<NewsModel> _generateMockNews() {
     return [
       NewsModel(
@@ -79,6 +135,23 @@ class NewsProvider extends ChangeNotifier {
         category: 'منتجات وتطبيقات',
         publishedAt: DateTime.now().subtract(const Duration(hours: 3)),
         author: 'John Doe',
+        likesCount: 45,
+        commentsCount: 8,
+        isLiked: false,
+        comments: [
+          NewsComment(
+            id: '1',
+            content: 'إنجاز رائع من Google! متحمس لتجربة هذا النموذج الجديد.',
+            authorName: 'أحمد محمد',
+            createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
+          ),
+          NewsComment(
+            id: '2',
+            content: 'هل سيكون أفضل من GPT-4؟ أتطلع لرؤية المقارنات.',
+            authorName: 'سارة أحمد',
+            createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+          ),
+        ],
       ),
       NewsModel(
         id: '2',
@@ -89,6 +162,17 @@ class NewsProvider extends ChangeNotifier {
         imageUrl: 'https://picsum.photos/400x225',
         category: 'استثمارات وتمويل',
         publishedAt: DateTime.now().subtract(const Duration(hours: 6)),
+        likesCount: 32,
+        commentsCount: 5,
+        isLiked: true,
+        comments: [
+          NewsComment(
+            id: '3',
+            content: 'استثمار ضخم! هذا يؤكد أن الذكاء الاصطناعي هو مستقبل التكنولوجيا.',
+            authorName: 'محمد علي',
+            createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+          ),
+        ],
       ),
       NewsModel(
         id: '3',
@@ -100,6 +184,9 @@ class NewsProvider extends ChangeNotifier {
         category: 'أخلاقيات الذكاء الاصطناعي',
         publishedAt: DateTime.now().subtract(const Duration(days: 1)),
         author: 'Dr. Sarah Johnson',
+        likesCount: 18,
+        commentsCount: 12,
+        isLiked: false,
       ),
       NewsModel(
         id: '4',
@@ -110,6 +197,9 @@ class NewsProvider extends ChangeNotifier {
         imageUrl: 'https://picsum.photos/400x225',
         category: 'أبحاث جديدة',
         publishedAt: DateTime.now().subtract(const Duration(days: 2)),
+        likesCount: 56,
+        commentsCount: 23,
+        isLiked: false,
       ),
       NewsModel(
         id: '5',
@@ -120,6 +210,9 @@ class NewsProvider extends ChangeNotifier {
         imageUrl: 'https://picsum.photos/400x225',
         category: 'منتجات وتطبيقات',
         publishedAt: DateTime.now().subtract(const Duration(days: 3)),
+        likesCount: 89,
+        commentsCount: 34,
+        isLiked: true,
       ),
     ];
   }

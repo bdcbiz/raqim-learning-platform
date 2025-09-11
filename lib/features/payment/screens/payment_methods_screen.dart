@@ -91,7 +91,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     final isWideScreen = size.width > 900;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppColors.primaryBackground,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.translate('paymentMethods') ?? 'اختر طريقة الدفع'),
         centerTitle: true,
@@ -155,7 +155,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           '${widget.amount.toStringAsFixed(2)} ر.س',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            color: AppColors.primaryColor,
                           ),
                         ),
                         Text(
@@ -196,14 +196,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected 
-                                ? AppTheme.primaryColor 
+                                ? AppColors.primaryColor 
                                 : Colors.grey[300]!,
                               width: isSelected ? 2 : 1,
                             ),
                             boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.1),
+                                    color: AppColors.primaryColor.withOpacity(0.1),
                                     spreadRadius: 2,
                                     blurRadius: 8,
                                   ),
@@ -229,7 +229,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                         _selectedMethodId = value;
                                       });
                                     },
-                                    activeColor: AppTheme.primaryColor,
+                                    activeColor: AppColors.primaryColor,
                                   ),
                                   const SizedBox(width: 16),
                                   _getPaymentIcon(method.icon),

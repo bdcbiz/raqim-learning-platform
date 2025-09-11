@@ -56,7 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: AppTheme.primaryColor),
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.primaryColor),
             onPressed: () => context.go('/login'),
           ),
         ),
@@ -75,8 +75,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.primaryColor.withOpacity(0.1),
-                          AppTheme.secondaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withOpacity(0.1),
+                          AppColors.primaryColor.withOpacity(0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -89,7 +89,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         Icon(
                           Icons.lock_reset,
                           size: 60,
-                          color: AppTheme.primaryColor,
+                          color: AppColors.primaryColor,
                         ),
                         Positioned(
                           right: 20,
@@ -97,7 +97,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: AppTheme.secondaryColor,
+                              color: AppColors.primaryColor,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -144,7 +144,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)?.translate('email') ?? 'Email',
                           hintText: 'example@email.com',
-                          prefixIcon: Icon(Icons.email_outlined, color: AppTheme.primaryColor),
+                          prefixIcon: Icon(Icons.email_outlined, color: AppColors.primaryColor),
                           filled: true,
                           fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
@@ -157,7 +157,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                            borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -200,7 +200,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleForgotPassword,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
+                            backgroundColor: AppColors.primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -243,7 +243,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               AppLocalizations.of(context)?.translate('login') ?? 'Login',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryColor,
+                                color: AppColors.primaryColor,
                                 fontSize: 15,
                               ),
                             ),
@@ -272,9 +272,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
-                    AppTheme.secondaryColor,
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor,
                   ],
                 ),
               ),
@@ -311,7 +311,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               child: Icon(
                                 Icons.key,
                                 size: 24,
-                                color: AppTheme.secondaryColor,
+                                color: AppColors.primaryColor,
                               ),
                             ),
                           ),
@@ -395,7 +395,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                               ),
                             ),
                             keyboardType: TextInputType.emailAddress,
@@ -432,7 +432,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _handleForgotPassword,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryColor,
+                                backgroundColor: AppColors.primaryColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),

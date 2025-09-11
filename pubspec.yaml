@@ -42,7 +42,7 @@ dependencies:
   go_router: ^13.0.0
   
   # Network & API
-  http: ^1.1.2
+  http: ^1.5.0
   dio: ^5.4.0
   
   # Authentication (commented out for now, using mock auth)
@@ -51,7 +51,7 @@ dependencies:
   # google_sign_in: ^6.2.1
   
   # Storage
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.3
   
   # UI Components
   google_fonts: ^6.1.0

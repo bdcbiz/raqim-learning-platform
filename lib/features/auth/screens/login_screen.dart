@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
               ),
               obscureText: _obscurePassword,
@@ -130,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text(
                   localizations?.translate('forgotPassword') ?? 'نسيت كلمة المرور؟',
                   style: TextStyle(
-                    color: AppTheme.primaryColor,
+                    color: AppColors.primaryColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -164,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: ElevatedButton(
                 onPressed: authProvider.isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppColors.primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -253,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       localizations?.translate('register') ?? 'إنشاء حساب',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primaryColor,
                       ),
                     ),
                   ),

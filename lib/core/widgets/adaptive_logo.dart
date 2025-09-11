@@ -21,7 +21,7 @@ class AdaptiveLogo extends StatelessWidget {
         ? Colors.white
         : isDarkMode 
             ? Colors.white 
-            : AppTheme.primaryColor;
+            : AppColors.primaryColor;
     
     return SvgPicture.asset(
       'assets/images/raqimLogo.svg',

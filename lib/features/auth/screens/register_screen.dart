@@ -44,6 +44,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       
       if (success && mounted) {
         context.go('/');
+      } else if (!success && mounted) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error ?? 'فشل إنشاء الحساب'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -97,7 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
               ),
               validator: FormBuilderValidators.compose([
@@ -123,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -160,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
               ),
               obscureText: _obscurePassword,
@@ -197,7 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
               ),
               obscureText: _obscureConfirmPassword,
@@ -227,7 +235,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Text(
                       localizations?.translate('termsAndConditions') ?? 'الشروط والأحكام',
                       style: TextStyle(
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primaryColor,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
                       ),
@@ -239,7 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Text(
                       localizations?.translate('privacyPolicy') ?? 'سياسة الخصوصية',
                       style: TextStyle(
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primaryColor,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
                       ),
@@ -249,7 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              activeColor: AppTheme.primaryColor,
+              activeColor: AppColors.primaryColor,
             ),
             const SizedBox(height: 16),
             if (authProvider.error != null)
@@ -279,7 +287,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: ElevatedButton(
                 onPressed: authProvider.isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppColors.primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -368,7 +376,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       localizations?.translate('login') ?? 'تسجيل الدخول',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primaryColor,
                       ),
                     ),
                   ),

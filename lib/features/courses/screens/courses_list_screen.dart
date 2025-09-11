@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/courses_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../widgets/common/modern_search_field.dart';
+import '../../../widgets/common/pill_button.dart';
+import '../../../widgets/common/course_card.dart';
 
 class CoursesListScreen extends StatefulWidget {
-  const CoursesListScreen({super.key});
+  final bool showOnlyEnrolled;
+  
+  const CoursesListScreen({
+    super.key,
+    this.showOnlyEnrolled = false,
+  });
 
   @override
   State<CoursesListScreen> createState() => _CoursesListScreenState();
@@ -66,270 +73,184 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   Widget build(BuildContext context) {
     final coursesProvider = Provider.of<CoursesProvider>(context);
     final isWideScreen = MediaQuery.of(context).size.width > 900;
+    
+    // Filter courses based on enrollment if needed
+    final displayCourses = widget.showOnlyEnrolled 
+        ? coursesProvider.courses.where((course) => course.isEnrolled == true).toList()
+        : coursesProvider.courses;
 
     return Scaffold(
+      backgroundColor: AppColors.primaryBackground,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)?.translate('coursesTitle') ?? 'الدورات التعليمية'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(120),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
+        title: Text(
+          widget.showOnlyEnrolled 
+              ? (AppLocalizations.of(context)?.translate('myCourses') ?? 'كورساتي')
+              : (AppLocalizations.of(context)?.translate('coursesTitle') ?? 'الدورات التعليمية'),
+          style: AppTextStyles.h2,
+        ),
+        backgroundColor: AppColors.primaryBackground,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          // Search and Filters Section
+          Container(
+            color: AppColors.primaryBackground,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Search Bar
+                ModernSearchField(
                   controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)?.translate('searchCourse') ?? 'ابحث عن دورة...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              coursesProvider.filterCourses(searchQuery: '');
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
+                  hintText: AppLocalizations.of(context)?.translate('searchCourse') ?? 'ابحث عن دورة...',
                   onChanged: (value) {
                     coursesProvider.filterCourses(searchQuery: value);
                   },
+                  suffixIcon: _searchController.text.isNotEmpty ? Icons.clear : null,
+                  onSuffixIconTap: () {
+                    _searchController.clear();
+                    coursesProvider.filterCourses(searchQuery: '');
+                  },
                 ),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    _buildFilterChip(
-                      AppLocalizations.of(context)?.translate('all') ?? 'الكل',
-                      coursesProvider.selectedLevel == 'الكل',
-                      () => coursesProvider.filterCourses(level: 'الكل'),
-                    ),
-                    ...AppConstants.courseLevels.map((level) => _buildFilterChip(
-                      _getLocalizedLevel(level, context),
-                      coursesProvider.selectedLevel == level,
-                      () => coursesProvider.filterCourses(level: level),
-                    )),
-                    const SizedBox(width: 16),
-                    const Text('|', style: TextStyle(color: Colors.grey)),
-                    const SizedBox(width: 16),
-                    _buildFilterChip(
-                      AppLocalizations.of(context)?.translate('all') ?? 'الكل',
-                      coursesProvider.selectedCategory == 'الكل',
-                      () => coursesProvider.filterCourses(category: 'الكل'),
-                    ),
-                    _buildFilterChip(
-                      AppLocalizations.of(context)?.translate('machineLearning') ?? 'تعلم الآلة',
-                      coursesProvider.selectedCategory == 'تعلم الآلة',
-                      () => coursesProvider.filterCourses(category: 'تعلم الآلة'),
-                    ),
-                    _buildFilterChip(
-                      AppLocalizations.of(context)?.translate('naturalLanguageProcessing') ?? 'معالجة اللغات الطبيعية',
-                      coursesProvider.selectedCategory == 'معالجة اللغات الطبيعية',
-                      () => coursesProvider.filterCourses(category: 'معالجة اللغات الطبيعية'),
-                    ),
-                    _buildFilterChip(
-                      AppLocalizations.of(context)?.translate('computerVision') ?? 'رؤية الحاسوب',
-                      coursesProvider.selectedCategory == 'رؤية الحاسوب',
-                      () => coursesProvider.filterCourses(category: 'رؤية الحاسوب'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: coursesProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : coursesProvider.error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(coursesProvider.error!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => coursesProvider.loadCourses(),
-                        child: Text(AppLocalizations.of(context)?.translate('retry') ?? 'إعادة المحاولة'),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => coursesProvider.loadCourses(),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: isWideScreen ? 3 : 1,
-                      childAspectRatio: isWideScreen ? 1.1 : 1.3,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: coursesProvider.courses.length,
+                
+                const SizedBox(height: 16),
+                
+                // Filter Pills
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _getFilterCategories(context).length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
                     itemBuilder: (context, index) {
-                      final course = coursesProvider.courses[index];
-                      return _buildCourseCard(context, course);
+                      final category = _getFilterCategories(context)[index];
+                      return PillButton(
+                        text: category['label'],
+                        isSelected: _isFilterSelected(category['value'], coursesProvider),
+                        onPressed: () => _onFilterPressed(category['value'], coursesProvider),
+                      );
                     },
                   ),
                 ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (_) => onTap(),
-        selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+              ],
+            ),
+          ),
+          
+          // Courses List
+          Expanded(
+            child: coursesProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : coursesProvider.error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const SizedBox(height: 16),
+                            Text(
+                              coursesProvider.error!,
+                              style: AppTextStyles.body,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => coursesProvider.loadCourses(),
+                              child: Text(AppLocalizations.of(context)?.translate('retry') ?? 'إعادة المحاولة'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () => coursesProvider.loadCourses(),
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: isWideScreen ? 3 : 2,
+                            childAspectRatio: isWideScreen ? 0.85 : 0.75,
+                            crossAxisSpacing: isWideScreen ? 16 : 12,
+                            mainAxisSpacing: isWideScreen ? 16 : 12,
+                          ),
+                          itemCount: displayCourses.length,
+                          itemBuilder: (context, index) {
+                            final course = displayCourses[index];
+                            return CourseCard(
+                              title: _getLocalizedCourseTitle(course, context),
+                              instructor: _getLocalizedInstructorName(course, context),
+                              imageUrl: course.thumbnailUrl,
+                              lessonsCount: course.lessons?.length ?? 12,
+                              duration: '${course.duration ?? 8} ساعات',
+                              price: course.price == 0 ? 'مجاني' : '${course.price.toInt()} ر.س',
+                              rating: course.rating,
+                              onTap: () {
+                                Provider.of<CoursesProvider>(context, listen: false).selectCourse(course.id);
+                                context.go('/course/${course.id}');
+                              },
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCourseCard(BuildContext context, dynamic course) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Provider.of<CoursesProvider>(context, listen: false).selectCourse(course.id);
-          context.go('/course/${course.id}');
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: CachedNetworkImage(
-                imageUrl: course.thumbnailUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.error),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            _getLocalizedCourseTitle(course, context),
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            _getLocalizedInstructorName(course, context),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.star, size: 12, color: Colors.amber),
-                              const SizedBox(width: 2),
-                              Text(
-                                course.rating.toString(),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  '(${course.totalRatings})',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
-                                    fontSize: 10,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Row(
-                            children: [
-                              Flexible(
-                                flex: 2,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    _getLocalizedLevel(course.level, context),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: AppTheme.primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                flex: 1,
-                                child: Text(
-                                  course.isFree 
-                                      ? (AppLocalizations.of(context)?.translate('free') ?? 'مجاني')
-                                      : '${course.price.toInt()} ${AppLocalizations.of(context)?.translate('sar') ?? 'ر.س'}',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: course.isFree ? Colors.green : null,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.end,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  List<Map<String, dynamic>> _getFilterCategories(BuildContext context) {
+    return [
+      {
+        'label': AppLocalizations.of(context)?.translate('all') ?? 'الكل',
+        'value': 'all',
+        'type': 'category'
+      },
+      {
+        'label': AppLocalizations.of(context)?.translate('machineLearning') ?? 'تعلم الآلة',
+        'value': 'تعلم الآلة',
+        'type': 'category'
+      },
+      {
+        'label': AppLocalizations.of(context)?.translate('naturalLanguageProcessing') ?? 'معالجة اللغات الطبيعية',
+        'value': 'معالجة اللغات الطبيعية',
+        'type': 'category'
+      },
+      {
+        'label': AppLocalizations.of(context)?.translate('computerVision') ?? 'رؤية الحاسوب',
+        'value': 'رؤية الحاسوب',
+        'type': 'category'
+      },
+      {
+        'label': _getLocalizedLevel('مبتدئ', context),
+        'value': 'مبتدئ',
+        'type': 'level'
+      },
+      {
+        'label': _getLocalizedLevel('متوسط', context),
+        'value': 'متوسط',
+        'type': 'level'
+      },
+      {
+        'label': _getLocalizedLevel('متقدم', context),
+        'value': 'متقدم',
+        'type': 'level'
+      },
+    ];
   }
+
+  bool _isFilterSelected(String value, CoursesProvider provider) {
+    if (value == 'all') {
+      return provider.selectedCategory == 'الكل';
+    }
+    return provider.selectedCategory == value || provider.selectedLevel == value;
+  }
+
+  void _onFilterPressed(String value, CoursesProvider provider) {
+    if (value == 'all') {
+      provider.filterCourses(category: 'الكل');
+    } else if (['مبتدئ', 'متوسط', 'متقدم'].contains(value)) {
+      provider.filterCourses(level: value);
+    } else {
+      provider.filterCourses(category: value);
+    }
+  }
+
 
   @override
   void dispose() {

@@ -16,7 +16,7 @@ class CertificatesScreen extends StatelessWidget {
           AppLocalizations.of(context)?.translate('myCertificates') ?? 'شهاداتي',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: AppColors.primaryColor,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
@@ -80,8 +80,8 @@ class CertificatesScreen extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppTheme.primaryColor.withOpacity(0.1),
-                          AppTheme.secondaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withOpacity(0.1),
+                          AppColors.primaryColor.withOpacity(0.05),
                         ],
                       ),
                     ),
@@ -95,7 +95,7 @@ class CertificatesScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor,
+                                  color: AppColors.primaryColor,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -203,7 +203,7 @@ class CertificatesScreen extends StatelessWidget {
                                   label: Text(AppLocalizations.of(context)?.translate('share') ?? 'مشاركة'),
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
-                                    backgroundColor: AppTheme.primaryColor,
+                                    backgroundColor: AppColors.primaryColor,
                                   ),
                                 ),
                               ),
@@ -238,13 +238,13 @@ class CertificatesScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.workspace_premium,
                   size: 48,
-                  color: AppTheme.primaryColor,
+                  color: AppColors.primaryColor,
                 ),
               ),
               const SizedBox(height: 16),
@@ -293,7 +293,7 @@ class CertificatesScreen extends StatelessWidget {
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: AppColors.primaryColor,
                       ),
                       child: const Text('تحميل الشهادة'),
                     ),

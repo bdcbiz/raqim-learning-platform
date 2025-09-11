@@ -23,6 +23,11 @@ class CourseModel {
   final bool isFree;
   final String language;
   final List<Review> reviews;
+  final bool isEnrolled;
+
+  // Getter methods for backward compatibility
+  int get duration => totalDuration.inHours;
+  List<Lesson> get lessons => modules.expand((module) => module.lessons).toList();
 
   CourseModel({
     required this.id,
@@ -49,6 +54,7 @@ class CourseModel {
     this.isFree = false,
     this.language = 'ar',
     this.reviews = const [],
+    this.isEnrolled = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -82,35 +88,40 @@ class CourseModel {
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      thumbnailUrl: json['thumbnailUrl'],
-      promoVideoUrl: json['promoVideoUrl'],
-      instructorId: json['instructorId'],
-      instructorName: json['instructorName'],
-      instructorBio: json['instructorBio'],
-      instructorPhotoUrl: json['instructorPhotoUrl'],
-      level: json['level'],
-      category: json['category'],
-      objectives: List<String>.from(json['objectives']),
-      requirements: List<String>.from(json['requirements']),
-      modules: (json['modules'] as List)
-          .map((m) => CourseModule.fromJson(m))
-          .toList(),
-      price: json['price'].toDouble(),
-      rating: json['rating'].toDouble(),
-      totalRatings: json['totalRatings'],
-      enrolledStudents: json['enrolledStudents'],
-      totalDuration: Duration(minutes: json['totalDuration']),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      isFree: json['isFree'] ?? false,
+      id: json['_id'] ?? json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      thumbnailUrl: json['thumbnailUrl'] ?? json['thumbnail'] ?? 'https://picsum.photos/400/225',
+      promoVideoUrl: json['promoVideoUrl'] ?? json['videoUrl'],
+      instructorId: json['instructorId'] ?? json['instructor']?['_id'] ?? '',
+      instructorName: json['instructorName'] ?? json['instructor']?['name'] ?? 'مدرس',
+      instructorBio: json['instructorBio'] ?? json['instructor']?['bio'] ?? '',
+      instructorPhotoUrl: json['instructorPhotoUrl'] ?? json['instructor']?['avatar'],
+      level: json['level'] ?? 'مبتدئ',
+      category: json['category'] ?? 'عام',
+      objectives: json['objectives'] != null ? List<String>.from(json['objectives']) : [],
+      requirements: json['requirements'] != null ? List<String>.from(json['requirements']) : [],
+      modules: json['modules'] != null 
+          ? (json['modules'] as List).map((m) => CourseModule.fromJson(m)).toList()
+          : [],
+      price: (json['price'] ?? 0).toDouble(),
+      rating: (json['rating'] ?? 0).toDouble(),
+      totalRatings: json['totalRatings'] ?? json['ratingsCount'] ?? 0,
+      enrolledStudents: json['enrolledStudents'] ?? json['studentsCount'] ?? 0,
+      totalDuration: Duration(hours: json['duration'] ?? 1),
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt']) 
+          : DateTime.now(),
+      isFree: json['isFree'] ?? json['price'] == 0 ?? false,
       language: json['language'] ?? 'ar',
       reviews: (json['reviews'] as List?)
               ?.map((r) => Review.fromJson(r))
               .toList() ??
           [],
+      isEnrolled: json['isEnrolled'] ?? false,
     );
   }
 }

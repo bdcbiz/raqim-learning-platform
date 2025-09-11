@@ -67,7 +67,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     final isWideScreen = size.width > 900;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppColors.primaryBackground,
       appBar: AppBar(
         title: const Text('سجل المدفوعات'),
         centerTitle: true,
@@ -104,8 +104,8 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.primaryColor,
-                        AppTheme.primaryColor.withOpacity(0.8),
+                        AppColors.primaryColor,
+                        AppColors.primaryColor.withOpacity(0.8),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -258,7 +258,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                                       '${transaction.amount.toStringAsFixed(2)} ${transaction.currency}',
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryColor,
+                                        color: AppColors.primaryColor,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -327,10 +327,10 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           _filterStatus = value;
         });
       },
-      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-      checkmarkColor: AppTheme.primaryColor,
+      selectedColor: AppColors.primaryColor.withOpacity(0.2),
+      checkmarkColor: AppColors.primaryColor,
       labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primaryColor : Colors.grey[700],
+        color: isSelected ? AppColors.primaryColor : Colors.grey[700],
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -488,7 +488,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
             value,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
-              color: highlight ? AppTheme.primaryColor : Colors.black87,
+              color: highlight ? AppColors.primaryColor : Colors.black87,
             ),
             textAlign: TextAlign.end,
           ),

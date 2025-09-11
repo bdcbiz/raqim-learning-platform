@@ -34,11 +34,15 @@ import 'features/community/screens/post_details_screen.dart';
 import 'features/community/screens/create_post_screen.dart';
 import 'features/news/screens/news_feed_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'services/api_service.dart';
+import 'providers/course_provider.dart';
+import 'screens/courses_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   final prefs = await SharedPreferences.getInstance();
+  await ApiService.init();
   
   runApp(RaqimApp(prefs: prefs));
 }
@@ -55,6 +59,7 @@ class RaqimApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppSettingsProvider(prefs)),
         ChangeNotifierProvider(create: (_) => AuthProvider(prefs)),
         ChangeNotifierProvider(create: (_) => CoursesProvider()),
+        ChangeNotifierProvider(create: (_) => CourseProvider()),
         ChangeNotifierProvider(create: (_) => CertificatesProvider()),
         ChangeNotifierProvider(create: (_) => CommunityProvider()),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
@@ -68,8 +73,7 @@ class RaqimApp extends StatelessWidget {
               title: AppConstants.appName,
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: settingsProvider.themeMode,
+              themeMode: ThemeMode.light,
               locale: settingsProvider.locale,
               supportedLocales: const [
                 Locale('ar', 'SA'),
@@ -91,7 +95,7 @@ class RaqimApp extends StatelessWidget {
 
   GoRouter _router(BuildContext context) {
     return GoRouter(
-      initialLocation: '/',
+      initialLocation: '/register',
       redirect: (context, state) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final isLoggedIn = authProvider.isLoggedIn;
@@ -100,10 +104,12 @@ class RaqimApp extends StatelessWidget {
                            state.matchedLocation.startsWith('/forgot-password') ||
                            state.matchedLocation == '/reset-password';
         
+        // If not logged in and not on auth page, redirect to register
         if (!isLoggedIn && !isAuthRoute) {
-          return '/login';
+          return '/register';
         }
         
+        // If logged in and on auth page, go to home
         if (isLoggedIn && isAuthRoute) {
           return '/';
         }
@@ -115,6 +121,10 @@ class RaqimApp extends StatelessWidget {
           path: '/',
           builder: (context, state) => const DashboardScreen(),
           routes: [
+            GoRoute(
+              path: 'courses',
+              builder: (context, state) => const CoursesScreen(),
+            ),
             GoRoute(
               path: 'my-courses',
               builder: (context, state) => const MyCoursesScreen(),
@@ -194,6 +204,10 @@ class RaqimApp extends StatelessWidget {
               builder: (context, state) => const PaymentHistoryScreen(),
             ),
           ],
+        ),
+        GoRoute(
+          path: '/courses',
+          builder: (context, state) => const CoursesListScreen(),
         ),
         GoRoute(
           path: '/login',

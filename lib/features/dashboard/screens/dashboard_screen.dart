@@ -12,6 +12,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/app_settings_provider.dart';
 import '../../../core/widgets/adaptive_logo.dart';
+import 'modern_home_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,8 +25,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   
   final List<Widget> _screens = [
-    const DashboardHomeScreen(),
-    const CoursesListScreen(),
+    const ModernHomeScreen(),
+    const CoursesListScreen(showOnlyEnrolled: true), // Show only enrolled courses
     const CommunityFeedScreen(),
     const NewsFeedScreen(),
     const ProfileScreen(),
@@ -35,28 +36,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final localizations = AppLocalizations.of(context);
     return [
       NavigationDestination(
-        icon: const Icon(Icons.home_outlined),
-        selectedIcon: const Icon(Icons.home),
+        icon: Icon(Icons.home_outlined, color: AppColors.secondaryText),
+        selectedIcon: Icon(Icons.home, color: AppColors.primaryColor),
         label: localizations?.translate('home') ?? 'Home',
       ),
       NavigationDestination(
-        icon: const Icon(Icons.school_outlined),
-        selectedIcon: const Icon(Icons.school),
-        label: localizations?.translate('courses') ?? 'Courses',
+        icon: Icon(Icons.school_outlined, color: AppColors.secondaryText),
+        selectedIcon: Icon(Icons.school, color: AppColors.primaryColor),
+        label: localizations?.translate('myCourses') ?? 'My Courses',
       ),
       NavigationDestination(
-        icon: const Icon(Icons.forum_outlined),
-        selectedIcon: const Icon(Icons.forum),
+        icon: Icon(Icons.forum_outlined, color: AppColors.secondaryText),
+        selectedIcon: Icon(Icons.forum, color: AppColors.primaryColor),
         label: localizations?.translate('community') ?? 'Community',
       ),
       NavigationDestination(
-        icon: const Icon(Icons.newspaper_outlined),
-        selectedIcon: const Icon(Icons.newspaper),
+        icon: Icon(Icons.newspaper_outlined, color: AppColors.secondaryText),
+        selectedIcon: Icon(Icons.newspaper, color: AppColors.primaryColor),
         label: localizations?.translate('news') ?? 'News',
       ),
       NavigationDestination(
-        icon: const Icon(Icons.person_outline),
-        selectedIcon: const Icon(Icons.person),
+        icon: Icon(Icons.person_outline, color: AppColors.secondaryText),
+        selectedIcon: Icon(Icons.person, color: AppColors.primaryColor),
         label: localizations?.translate('profile') ?? 'Profile',
       ),
     ];
@@ -79,9 +80,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 });
               },
               labelType: NavigationRailLabelType.none,
-              leading: const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: AdaptiveLogo(height: 40),
+              backgroundColor: AppColors.primaryColor,
+              selectedIconTheme: const IconThemeData(
+                color: Colors.white,
+                size: 28,
+              ),
+              unselectedIconTheme: const IconThemeData(
+                color: Colors.white70,
+                size: 24,
+              ),
+              selectedLabelTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              unselectedLabelTextStyle: const TextStyle(
+                color: Colors.white70,
+              ),
+              indicatorColor: Colors.white.withOpacity(0.2),
+              leading: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AdaptiveLogo(height: 32, useWhiteVersion: true),
+                    const SizedBox(height: 8),
+                    Text(
+                      'رقيم',
+                      style: AppTextStyles.body.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               destinations: _destinations(context).map((dest) => NavigationRailDestination(
                 icon: dest.icon,
@@ -99,7 +131,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryBackground,
+        elevation: 0,
+        centerTitle: false,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            const AdaptiveLogo(height: 32),
+            const SizedBox(width: 8),
+            Text(
+              'رقيم',
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
       body: _screens[_selectedIndex],
+      extendBody: false,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -108,6 +160,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         },
         destinations: _destinations(context),
+        backgroundColor: AppColors.white,
+        indicatorColor: AppColors.primaryColor.withOpacity(0.1),
+        surfaceTintColor: AppColors.white,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        height: 65,
       ),
     );
   }
@@ -169,7 +226,7 @@ class DashboardHomeScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: AppColors.primaryColor,
                       child: Text(
                         user?.name.substring(0, 1).toUpperCase() ?? 'U',
                         style: const TextStyle(
@@ -227,7 +284,7 @@ class DashboardHomeScreen extends StatelessWidget {
                     icon: const Icon(Icons.school),
                     label: Text(AppLocalizations.of(context)?.translate('exploreCourses') ?? 'Explore Courses'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: AppColors.primaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
@@ -329,10 +386,10 @@ class DashboardHomeScreen extends StatelessWidget {
                   final localizations = AppLocalizations.of(context);
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      backgroundColor: AppColors.primaryColor.withOpacity(0.1),
                       child: Icon(
                         index % 2 == 0 ? Icons.play_circle : Icons.comment,
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primaryColor,
                       ),
                     ),
                     title: Text(

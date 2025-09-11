@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../services/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,21 +36,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isUploading = true;
         });
 
-        // في تطبيق حقيقي، سترفع الصورة إلى السيرفر هنا
-        // وتحصل على URL للصورة المرفوعة
-        // لكن في هذا المثال، سنستخدم المسار المحلي فقط
-
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         
-        // للويب، نستخدم المسار مباشرة
-        // للموبايل، نستخدم File path
-        String imagePath = image.path;
-        
-        await authProvider.updateProfileImage(imagePath);
-
-        setState(() {
-          _isUploading = false;
-        });
+        // Upload image to server and get URL
+        try {
+          // For web, read bytes
+          if (kIsWeb) {
+            final bytes = await image.readAsBytes();
+            // In production, upload bytes to server
+            // For now, use data URL for immediate display
+            final base64Image = 'data:image/png;base64,${Uri.encodeComponent(String.fromCharCodes(bytes))}';
+            await authProvider.updateProfileImage(base64Image);
+          } else {
+            // For mobile, upload file to server
+            // TODO: Implement actual API upload
+            // final response = await ApiService.uploadAvatar(image.path);
+            // await authProvider.updateProfileImage(response['url']);
+            
+            // For now, use local path
+            await authProvider.updateProfileImage(image.path);
+          }
+          
+          // Force refresh the UI
+          if (mounted) {
+            setState(() {
+              _isUploading = false;
+            });
+          }
+        } catch (uploadError) {
+          // If upload fails, still update locally for preview
+          await authProvider.updateProfileImage(image.path);
+          
+          if (mounted) {
+            setState(() {
+              _isUploading = false;
+            });
+          }
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -99,12 +124,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppColors.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       Icons.photo_library,
-                      color: AppTheme.primaryColor,
+                      color: AppColors.primaryColor,
                     ),
                   ),
                   title: Text(AppLocalizations.of(context)?.translate('gallery') ?? 'المعرض'),
@@ -120,12 +145,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         Icons.camera_alt,
-                        color: AppTheme.primaryColor,
+                        color: AppColors.primaryColor,
                       ),
                     ),
                     title: Text(AppLocalizations.of(context)?.translate('camera') ?? 'الكاميرا'),
@@ -146,16 +171,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           });
 
                           final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                          await authProvider.updateProfileImage(image.path);
+                          
+                          // Upload image to server
+                          try {
+                            // TODO: Implement actual API upload
+                            // final response = await ApiService.uploadAvatar(image.path);
+                            // await authProvider.updateProfileImage(response['url']);
+                            
+                            // For now, use local path
+                            await authProvider.updateProfileImage(image.path);
+                          } catch (uploadError) {
+                            // If upload fails, still update locally
+                            await authProvider.updateProfileImage(image.path);
+                          }
 
-                          setState(() {
-                            _isUploading = false;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _isUploading = false;
+                            });
+                          }
 
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('تم تحديث صورة الملف الشخصي بنجاح'),
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)?.translate('profileImageUpdated') ?? 'تم تحديث صورة الملف الشخصي بنجاح'),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -187,12 +226,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileImage(dynamic user) {
-    if (user?.photoUrl != null) {
-      // Check if it's a local file path or network URL
-      if (user.photoUrl.startsWith('http')) {
+    if (user?.photoUrl != null && user.photoUrl.isNotEmpty) {
+      // Check if it's a data URL (for web)
+      if (user.photoUrl.startsWith('data:')) {
         return ClipOval(
-          child: Image.network(
-            user.photoUrl,
+          child: Image.memory(
+            Uri.parse(user.photoUrl.split(',')[1]).data!.contentAsBytes(),
             width: 96,
             height: 96,
             fit: BoxFit.cover,
@@ -201,7 +240,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
         );
-      } else if (!kIsWeb) {
+      }
+      // Check if it's a network URL
+      else if (user.photoUrl.startsWith('http')) {
+        return ClipOval(
+          child: Image.network(
+            user.photoUrl,
+            width: 96,
+            height: 96,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return SizedBox(
+                width: 96,
+                height: 96,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return _buildDefaultAvatar(user);
+            },
+          ),
+        );
+      } else if (!kIsWeb && File(user.photoUrl).existsSync()) {
         // For mobile, display local file
         return ClipOval(
           child: Image.file(
@@ -214,10 +282,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
         );
-      } else {
-        // For web, we can't display local file directly
-        // In production, you'd upload to server and get URL
-        return _buildDefaultAvatar(user);
       }
     }
     return _buildDefaultAvatar(user);
@@ -260,8 +324,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.7),
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.7),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -284,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         right: 0,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor,
+                            color: AppColors.primaryColor,
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: Colors.white,

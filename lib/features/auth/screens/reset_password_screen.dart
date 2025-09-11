@@ -168,7 +168,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: AppTheme.primaryColor),
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.primaryColor),
             onPressed: () => context.go('/forgot-password/verify', extra: widget.email),
           ),
         ),
@@ -187,8 +187,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.primaryColor.withOpacity(0.1),
-                          AppTheme.secondaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withOpacity(0.1),
+                          AppColors.primaryColor.withOpacity(0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -201,7 +201,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                         Icon(
                           Icons.lock_outline,
                           size: 60,
-                          color: AppTheme.primaryColor,
+                          color: AppColors.primaryColor,
                         ),
                         Positioned(
                           right: 20,
@@ -256,7 +256,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)?.translate('newPassword') ?? 'كلمة المرور الجديدة',
                           hintText: AppLocalizations.of(context)?.translate('enterStrongPassword') ?? 'أدخل كلمة مرور قوية',
-                          prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                          prefixIcon: Icon(Icons.lock_outline, color: AppColors.primaryColor),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -280,7 +280,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                            borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                           ),
                         ),
                         obscureText: _obscurePassword,
@@ -292,7 +292,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)?.translate('confirmPassword') ?? 'تأكيد كلمة المرور',
                           hintText: AppLocalizations.of(context)?.translate('reEnterPassword') ?? 'أعد إدخال كلمة المرور',
-                          prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                          prefixIcon: Icon(Icons.lock_outline, color: AppColors.primaryColor),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
@@ -316,7 +316,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                            borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                           ),
                         ),
                         obscureText: _obscureConfirmPassword,
@@ -379,7 +379,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleResetPassword,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
+                            backgroundColor: AppColors.primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -426,9 +426,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
-                    AppTheme.secondaryColor,
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor,
                   ],
                 ),
               ),
@@ -465,7 +465,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                               child: Icon(
                                 Icons.vpn_key,
                                 size: 24,
-                                color: AppTheme.secondaryColor,
+                                color: AppColors.primaryColor,
                               ),
                             ),
                           ),
@@ -558,7 +558,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                               ),
                             ),
                             obscureText: _obscurePassword,
@@ -592,7 +592,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                               ),
                             ),
                             obscureText: _obscureConfirmPassword,
@@ -678,7 +678,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _handleResetPassword,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryColor,
+                                backgroundColor: AppColors.primaryColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),

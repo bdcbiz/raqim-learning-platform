@@ -38,11 +38,11 @@ class ResponsiveAuthLayout extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: isDarkMode 
                 ? [
-                    AppTheme.primaryColor.withOpacity(0.2),
+                    AppColors.primaryColor.withOpacity(0.2),
                     Theme.of(context).scaffoldBackgroundColor,
                   ]
                 : [
-                    AppTheme.primaryColor.withOpacity(0.1),
+                    AppColors.primaryColor.withOpacity(0.1),
                     Colors.white,
                   ],
             ),
@@ -65,7 +65,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: AppColors.primaryColor,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -96,8 +96,8 @@ class ResponsiveAuthLayout extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppTheme.primaryColor.withOpacity(0.05),
-                AppTheme.secondaryColor.withOpacity(0.05),
+                AppColors.primaryColor.withOpacity(0.05),
+                AppColors.primaryColor.withOpacity(0.05),
               ],
             ),
           ),
@@ -127,7 +127,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
                           title,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            color: AppColors.primaryColor,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -165,9 +165,9 @@ class ResponsiveAuthLayout extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
-                    AppTheme.secondaryColor,
+                    AppColors.primaryColor,
+                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor,
                   ],
                 ),
               ),
@@ -225,7 +225,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
           Expanded(
             flex: 4,
             child: Container(
-              color: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : AppTheme.backgroundColor,
+              color: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : AppColors.primaryBackground,
               child: Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 450),
@@ -239,7 +239,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
                           title,
                           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            color: AppColors.primaryColor,
                           ),
                         ),
                         const SizedBox(height: 4),
