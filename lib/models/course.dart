@@ -6,6 +6,7 @@ class Course {
   final String descriptionAr;
   final String thumbnail;
   final Map<String, dynamic>? instructor;
+  final List<String>? categories;
   final String category;
   final String level;
   final double price;
@@ -29,6 +30,7 @@ class Course {
     required this.descriptionAr,
     required this.thumbnail,
     this.instructor,
+    this.categories,
     required this.category,
     required this.level,
     required this.price,
@@ -57,6 +59,7 @@ class Course {
       descriptionAr: json['descriptionAr'] ?? '',
       thumbnail: json['thumbnail'] ?? '',
       instructor: json['instructor'],
+      categories: json['categories'] != null ? List<String>.from(json['categories']) : null,
       category: json['category'] ?? '',
       level: json['level'] ?? '',
       price: (json['price'] ?? 0).toDouble(),
@@ -83,6 +86,7 @@ class Course {
       'descriptionAr': descriptionAr,
       'thumbnail': thumbnail,
       'instructor': instructor,
+      'categories': categories,
       'category': category,
       'level': level,
       'price': price,
@@ -112,6 +116,7 @@ class Course {
       descriptionAr: descriptionAr,
       thumbnail: thumbnail,
       instructor: instructor,
+      categories: categories,
       category: category,
       level: level,
       price: price,

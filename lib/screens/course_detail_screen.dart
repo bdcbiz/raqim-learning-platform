@@ -7,9 +7,9 @@ class CourseDetailScreen extends StatelessWidget {
   final Course course;
 
   const CourseDetailScreen({
-    Key? key,
+    super.key,
     required this.course,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +202,7 @@ class CourseDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    )).toList(),
+                    )),
                     const SizedBox(height: 24),
                   ],
                   // Requirements
@@ -233,7 +233,7 @@ class CourseDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    )).toList(),
+                    )),
                   ],
                   const SizedBox(height: 80),
                 ],

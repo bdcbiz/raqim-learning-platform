@@ -42,10 +42,42 @@ const CourseSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  categories: [{
+    type: String,
+    enum: [
+      'الذكاء الاصطناعي',
+      'تعلم الآلة',
+      'معالجة اللغات',
+      'رؤية الحاسوب',
+      'التعلم العميق',
+      'علم البيانات',
+      'البرمجة',
+      'Python',
+      'البحث العلمي',
+      'التطبيقات العملية',
+      'AI',
+      'Machine Learning',
+      'NLP',
+      'Computer Vision',
+      'Deep Learning',
+      'Data Science',
+      'Programming',
+      'Research',
+      'Applications'
+    ]
+  }],
+  // Keep old category field for backward compatibility, will be deprecated
   category: {
     type: String,
-    required: [true, 'Please add a category'],
     enum: [
+      'تعلم الآلة',
+      'معالجة اللغات',
+      'رؤية الحاسوب',
+      'التعلم العميق',
+      'علم البيانات',
+      'البرمجة',
+      'الذكاء التوليدي',
+      'الأعمال',
       'Machine Learning',
       'NLP',
       'Computer Vision',

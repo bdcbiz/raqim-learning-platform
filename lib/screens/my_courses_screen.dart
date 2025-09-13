@@ -6,7 +6,7 @@ import '../widgets/course_card.dart';
 import 'course_detail_screen.dart';
 
 class MyCoursesScreen extends StatefulWidget {
-  const MyCoursesScreen({Key? key}) : super(key: key);
+  const MyCoursesScreen({super.key});
 
   @override
   State<MyCoursesScreen> createState() => _MyCoursesScreenState();
@@ -195,10 +195,10 @@ class EnrolledCourseCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const EnrolledCourseCard({
-    Key? key,
+    super.key,
     required this.course,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

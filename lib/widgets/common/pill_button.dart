@@ -11,7 +11,7 @@ class PillButton extends StatelessWidget {
   final Color? unselectedTextColor;
 
   const PillButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.isSelected = false,
@@ -19,7 +19,7 @@ class PillButton extends StatelessWidget {
     this.unselectedColor,
     this.selectedTextColor,
     this.unselectedTextColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

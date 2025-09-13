@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/analytics/analytics_service_factory.dart';
 
 class ModernSearchField extends StatelessWidget {
   final String? hintText;
@@ -12,7 +13,7 @@ class ModernSearchField extends StatelessWidget {
   final VoidCallback? onSuffixIconTap;
 
   const ModernSearchField({
-    Key? key,
+    super.key,
     this.hintText,
     this.controller,
     this.onChanged,
@@ -21,7 +22,7 @@ class ModernSearchField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onSuffixIconTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

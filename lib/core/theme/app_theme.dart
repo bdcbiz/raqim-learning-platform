@@ -41,6 +41,13 @@ class AppTextStyles {
     fontWeight: FontWeight.bold,
     color: AppColors.primaryText,
   );
+
+  // Sub heading (H3) - 18px, Bold
+  static TextStyle get h3 => GoogleFonts.tajawal(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: AppColors.primaryText,
+  );
   
   // Card title - 16px, Semi-bold
   static TextStyle get cardTitle => GoogleFonts.tajawal(

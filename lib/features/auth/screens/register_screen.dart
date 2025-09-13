@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import '../providers/auth_provider.dart';
 import '../widgets/responsive_auth_layout.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../services/auth/auth_interface.dart';
+import '../../../services/auth/auth_service_factory.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,6 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
+  String? _errorMessage;
+  bool _isLoading = false;
 
   void _handleRegister() async {
     if (!_acceptTerms) {
@@ -34,24 +36,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (_formKey.currentState!.saveAndValidate()) {
       final values = _formKey.currentState!.value;
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
-      final success = await authProvider.register(
-        values['name'],
-        values['email'],
-        values['password'],
+
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final authService = AuthServiceFactory.createAuthService();
+
+      final result = await authService.registerWithEmailAndPassword(
+        name: values['name'],
+        email: values['email'],
+        password: values['password'],
       );
-      
-      if (success && mounted) {
-        context.go('/');
-      } else if (!success && mounted) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'فشل إنشاء الحساب'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result.success && mounted) {
+        if (result.status == AuthenticationStatus.authenticated) {
+          context.go('/');
+        } else if (result.status == AuthenticationStatus.emailNotVerified) {
+          // Navigate to email verification screen
+          context.go('/email-verification');
+        }
+      } else if (mounted) {
+        setState(() {
+          _errorMessage = result.errorMessage;
+        });
       }
     }
   }
@@ -67,17 +80,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.loginWithGoogle();
-    
-    if (success && mounted) {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final authService = AuthServiceFactory.createAuthService();
+    final result = await authService.signInWithGoogle();
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result.success && mounted) {
       context.go('/');
+    } else if (mounted) {
+      setState(() {
+        _errorMessage = result.errorMessage;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
     final localizations = AppLocalizations.of(context);
 
     return ResponsiveAuthLayout(
@@ -260,7 +285,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               activeColor: AppColors.primaryColor,
             ),
             const SizedBox(height: 16),
-            if (authProvider.error != null)
+            if (_errorMessage != null)
               Container(
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
@@ -275,7 +300,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        authProvider.error!,
+                        _errorMessage!,
                         style: const TextStyle(color: Colors.red, fontSize: 13),
                       ),
                     ),
@@ -285,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SizedBox(
               height: 50,
               child: ElevatedButton(
-                onPressed: authProvider.isLoading ? null : _handleRegister,
+                onPressed: _isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   shape: RoundedRectangleBorder(
@@ -293,7 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: authProvider.isLoading
+                child: _isLoading
                     ? const SizedBox(
                         width: 24,
                         height: 24,
@@ -330,7 +355,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SizedBox(
               height: 50,
               child: OutlinedButton(
-                onPressed: authProvider.isLoading ? null : _handleGoogleRegister,
+                onPressed: _isLoading ? null : _handleGoogleRegister,
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../../../data/models/news_model.dart';
-import '../../../core/constants/app_constants.dart';
 
 class NewsProvider extends ChangeNotifier {
   List<NewsModel> _news = [];
@@ -31,7 +28,6 @@ class NewsProvider extends ChangeNotifier {
 
     try {
       // For demo purposes, using mock data
-      // In production, uncomment the API call below
       await Future.delayed(const Duration(seconds: 1));
       _news = _generateMockNews();
       
@@ -131,7 +127,7 @@ class NewsProvider extends ChangeNotifier {
         description: 'أعلنت Google عن إطلاق الإصدار الجديد من نموذج Gemini مع تحسينات كبيرة في الأداء والدقة.',
         url: 'https://example.com/news/1',
         source: 'TechCrunch',
-        imageUrl: 'https://picsum.photos/400x225',
+        imageUrl: 'https://picsum.photos/400/225?random=11',
         category: 'منتجات وتطبيقات',
         publishedAt: DateTime.now().subtract(const Duration(hours: 3)),
         author: 'John Doe',
@@ -159,7 +155,7 @@ class NewsProvider extends ChangeNotifier {
         description: 'شركة ناشئة متخصصة في الذكاء الاصطناعي تحصل على تمويل ضخم لتطوير حلولها.',
         url: 'https://example.com/news/2',
         source: 'Forbes',
-        imageUrl: 'https://picsum.photos/400x225',
+        imageUrl: 'https://picsum.photos/400/225?random=12',
         category: 'استثمارات وتمويل',
         publishedAt: DateTime.now().subtract(const Duration(hours: 6)),
         likesCount: 32,
@@ -180,7 +176,7 @@ class NewsProvider extends ChangeNotifier {
         description: 'باحثون من MIT ينشرون دراسة شاملة حول التحديات الأخلاقية لاستخدام AI في التشخيص الطبي.',
         url: 'https://example.com/news/3',
         source: 'MIT News',
-        imageUrl: 'https://picsum.photos/400x225',
+        imageUrl: 'https://picsum.photos/400/225?random=13',
         category: 'أخلاقيات الذكاء الاصطناعي',
         publishedAt: DateTime.now().subtract(const Duration(days: 1)),
         author: 'Dr. Sarah Johnson',
@@ -194,7 +190,7 @@ class NewsProvider extends ChangeNotifier {
         description: 'تقنيات جديدة لتقليل استهلاك الموارد مع الحفاظ على الأداء العالي للنماذج.',
         url: 'https://example.com/news/4',
         source: 'OpenAI Blog',
-        imageUrl: 'https://picsum.photos/400x225',
+        imageUrl: 'https://picsum.photos/400/225?random=14',
         category: 'أبحاث جديدة',
         publishedAt: DateTime.now().subtract(const Duration(days: 2)),
         likesCount: 56,
@@ -207,7 +203,7 @@ class NewsProvider extends ChangeNotifier {
         description: 'خطة شاملة لدمج مساعد الذكاء الاصطناعي في كافة تطبيقات Microsoft Office.',
         url: 'https://example.com/news/5',
         source: 'The Verge',
-        imageUrl: 'https://picsum.photos/400x225',
+        imageUrl: 'https://picsum.photos/400/225?random=15',
         category: 'منتجات وتطبيقات',
         publishedAt: DateTime.now().subtract(const Duration(days: 3)),
         likesCount: 89,

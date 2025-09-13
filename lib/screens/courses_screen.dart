@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/course_provider.dart';
-import '../widgets/course_card.dart';
+import '../widgets/common/modern_course_card.dart';
+import 'course_detail_screen.dart';
 
 class CoursesScreen extends StatefulWidget {
-  const CoursesScreen({Key? key}) : super(key: key);
+  const CoursesScreen({super.key});
 
   @override
   State<CoursesScreen> createState() => _CoursesScreenState();
@@ -73,9 +74,17 @@ class _CoursesScreenState extends State<CoursesScreen> {
 
           // Filter courses based on selected filters
           final filteredCourses = courses.where((course) {
-            if (selectedCategory != null &&
-                course.category != selectedCategory) {
-              return false;
+            // Check if course has categories field (for courses with multiple categories)
+            if (selectedCategory != null) {
+              // Try to check in categories array first
+              if (course.categories != null && course.categories!.isNotEmpty) {
+                if (!course.categories!.contains(selectedCategory)) {
+                  return false;
+                }
+              } else if (course.category != selectedCategory) {
+                // Fallback to single category field for backward compatibility
+                return false;
+              }
             }
             if (selectedLevel != null && course.level != selectedLevel) {
               return false;
@@ -120,12 +129,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                               Container(
                                 margin: const EdgeInsets.only(left: 8),
                                 child: ChoiceChip(
-                                  label: const Text('البرمجة'),
-                                  selected: selectedCategory == 'programming',
+                                  label: const Text('الذكاء الاصطناعي'),
+                                  selected: selectedCategory == 'الذكاء الاصطناعي',
                                   onSelected: (selected) {
                                     setState(() {
                                       selectedCategory = selected
-                                          ? 'programming'
+                                          ? 'الذكاء الاصطناعي'
                                           : null;
                                     });
                                   },
@@ -134,12 +143,68 @@ class _CoursesScreenState extends State<CoursesScreen> {
                               Container(
                                 margin: const EdgeInsets.only(left: 8),
                                 child: ChoiceChip(
-                                  label: const Text('الرياضيات'),
-                                  selected: selectedCategory == 'mathematics',
+                                  label: const Text('تعلم الآلة'),
+                                  selected: selectedCategory == 'تعلم الآلة',
                                   onSelected: (selected) {
                                     setState(() {
                                       selectedCategory = selected
-                                          ? 'mathematics'
+                                          ? 'تعلم الآلة'
+                                          : null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                child: ChoiceChip(
+                                  label: const Text('معالجة اللغات'),
+                                  selected: selectedCategory == 'معالجة اللغات',
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedCategory = selected
+                                          ? 'معالجة اللغات'
+                                          : null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                child: ChoiceChip(
+                                  label: const Text('رؤية الحاسوب'),
+                                  selected: selectedCategory == 'رؤية الحاسوب',
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedCategory = selected
+                                          ? 'رؤية الحاسوب'
+                                          : null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                child: ChoiceChip(
+                                  label: const Text('التعلم العميق'),
+                                  selected: selectedCategory == 'التعلم العميق',
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedCategory = selected
+                                          ? 'التعلم العميق'
+                                          : null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                child: ChoiceChip(
+                                  label: const Text('Python'),
+                                  selected: selectedCategory == 'Python',
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedCategory = selected
+                                          ? 'Python'
                                           : null;
                                     });
                                   },
@@ -291,7 +356,25 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         mainAxisSpacing: 16,
                       ),
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        return CourseCard(course: filteredCourses[index]);
+                        final course = filteredCourses[index];
+                        return ModernCourseCard(
+                          title: course.title,
+                          instructor: course.instructorName,
+                          imageUrl: course.thumbnail ?? 'https://picsum.photos/400/300?random=${course.id}',
+                          category: course.category ?? 'تعلم الآلة',
+                          studentsCount: 500,
+                          price: course.price == 0 ? 'مجاني' : '${course.price} ريال',
+                          rating: course.rating,
+                          categoryColor: ModernCourseCard.getCategoryColor(course.category ?? 'تعلم الآلة'),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CourseDetailScreen(course: course),
+                              ),
+                            );
+                          },
+                        );
                       }, childCount: filteredCourses.length),
                     ),
                   ),

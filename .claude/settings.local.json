@@ -49,7 +49,14 @@
       "Bash(tree:*)",
       "Bash(tasklist)",
       "Bash(sc query:*)",
-      "Bash(del CON)"
+      "Bash(del CON)",
+      "Bash(del libservicesfirebase_auth_service.dart)",
+      "Bash(tasklist:*)",
+      "Bash(start http://localhost:51324)",
+      "Bash(start http://localhost:61740)",
+      "Bash(start http://localhost:50896)",
+      "Bash(cmd /c:*)",
+      "Bash(del libservicesfirebasefirebase_service.dart)"
     ],
     "deny": [],
     "ask": []

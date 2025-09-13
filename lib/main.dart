@@ -3,6 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -23,9 +25,11 @@ import 'features/auth/screens/register_screen.dart';
 import 'features/auth/screens/forgot_password_screen.dart';
 import 'features/auth/screens/otp_verification_screen.dart';
 import 'features/auth/screens/reset_password_screen.dart';
+import 'features/auth/screens/email_verification_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/courses/screens/courses_list_screen.dart';
 import 'features/courses/screens/course_details_screen.dart';
+import 'screens/simple_course_detail_screen.dart';
 import 'features/courses/screens/my_courses_screen.dart';
 import 'features/courses/screens/lesson_player_screen.dart';
 import 'features/certificates/screens/certificates_screen.dart';
@@ -35,15 +39,40 @@ import 'features/community/screens/create_post_screen.dart';
 import 'features/news/screens/news_feed_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'services/api_service.dart';
+import 'services/auth/auth_service_factory.dart';
+import 'services/analytics/analytics_service_factory.dart';
+import 'services/analytics/firebase_analytics_service.dart';
 import 'providers/course_provider.dart';
 import 'screens/courses_screen.dart';
+import 'services/progress_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Initialize Firebase with proper configuration
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized successfully');
+  } catch (e) {
+    // Handle Firebase initialization errors gracefully
+    debugPrint('Firebase initialization failed: $e');
+  }
+
   final prefs = await SharedPreferences.getInstance();
-  await ApiService.init();
-  
+  // ApiService.init() is not needed when using mock data
+  // await ApiService.init();
+
+  // Initialize platform-specific auth service
+  final authService = AuthServiceFactory.createAuthService();
+  authService.initialize();
+
+  // Initialize analytics service
+  final analyticsService = AnalyticsServiceFactory.instance;
+  await analyticsService.initialize();
+  await analyticsService.logAppLaunch('cold_start');
+
   runApp(RaqimApp(prefs: prefs));
 }
 
@@ -58,12 +87,14 @@ class RaqimApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppSettingsProvider(prefs)),
         ChangeNotifierProvider(create: (_) => AuthProvider(prefs)),
+        ChangeNotifierProvider.value(value: AuthServiceFactory.createAuthService()),
         ChangeNotifierProvider(create: (_) => CoursesProvider()),
         ChangeNotifierProvider(create: (_) => CourseProvider()),
         ChangeNotifierProvider(create: (_) => CertificatesProvider()),
         ChangeNotifierProvider(create: (_) => CommunityProvider()),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => ProgressService()),
       ],
       child: Consumer<AppSettingsProvider>(
         builder: (context, settingsProvider, child) {
@@ -95,25 +126,50 @@ class RaqimApp extends StatelessWidget {
 
   GoRouter _router(BuildContext context) {
     return GoRouter(
-      initialLocation: '/register',
+      initialLocation: '/',
       redirect: (context, state) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final isLoggedIn = authProvider.isLoggedIn;
-        final isAuthRoute = state.matchedLocation == '/login' || 
-                           state.matchedLocation == '/register' ||
-                           state.matchedLocation.startsWith('/forgot-password') ||
-                           state.matchedLocation == '/reset-password';
-        
-        // If not logged in and not on auth page, redirect to register
-        if (!isLoggedIn && !isAuthRoute) {
-          return '/register';
+        final authService = AuthServiceFactory.createAuthService();
+        final isAuthenticated = authService.isAuthenticated;
+        final isEmailVerified = authService.isEmailVerified;
+        final currentUser = authService.currentUser;
+
+        // Debug logging
+        print('DEBUG: Route redirect check');
+        print('  - Path: ${state.matchedLocation}');
+        print('  - isAuthenticated: $isAuthenticated');
+        print('  - isEmailVerified: $isEmailVerified');
+        print('  - currentUser: ${currentUser?.email}');
+        print('  - authStatus: ${authService.status}');
+
+        final isLoginPage = state.matchedLocation == '/login';
+        final isRegisterPage = state.matchedLocation == '/register';
+        final isEmailVerificationPage = state.matchedLocation == '/email-verification';
+        final isForgotPasswordPage = state.matchedLocation.startsWith('/forgot-password');
+
+        // Allow auth pages and email verification
+        if (isLoginPage || isRegisterPage || isEmailVerificationPage || isForgotPasswordPage) {
+          // If fully authenticated, redirect to home
+          if (isAuthenticated && isEmailVerified && (isLoginPage || isRegisterPage)) {
+            print('DEBUG: Redirecting authenticated user to home');
+            return '/';
+          }
+          return null;
         }
-        
-        // If logged in and on auth page, go to home
-        if (isLoggedIn && isAuthRoute) {
-          return '/';
+
+        // Check if user has current session but email not verified
+        if (currentUser != null && !isEmailVerified) {
+          print('DEBUG: User logged in but email not verified, allowing access');
+          // For demo purposes, we'll allow access even without email verification
+          // In production, you might want to redirect to email verification
+          return null;
         }
-        
+
+        // If not authenticated at all, redirect to login
+        if (currentUser == null) {
+          print('DEBUG: No user session, redirecting to login');
+          return '/login';
+        }
+
         return null;
       },
       routes: [
@@ -137,7 +193,7 @@ class RaqimApp extends StatelessWidget {
               path: 'course/:courseId',
               builder: (context, state) {
                 final courseId = state.pathParameters['courseId']!;
-                return CourseDetailsScreen(courseId: courseId);
+                return SimpleCourseDetailScreen(courseId: courseId);
               },
               routes: [
                 GoRoute(
@@ -216,6 +272,10 @@ class RaqimApp extends StatelessWidget {
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(
+          path: '/email-verification',
+          builder: (context, state) => const EmailVerificationScreen(),
         ),
         GoRoute(
           path: '/forgot-password',

@@ -101,13 +101,6 @@ class SettingsScreen extends StatelessWidget {
                       color: AppColors.primaryColor,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'رقيم',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryColor,
-                      ),
-                    ),
                     const SizedBox(height: 8),
                     Text(
                       settingsProvider.isArabic 

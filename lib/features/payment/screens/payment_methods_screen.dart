@@ -295,7 +295,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                       const SizedBox(height: 32),
                       Container(
                         padding: const EdgeInsets.all(16),

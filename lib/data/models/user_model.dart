@@ -14,6 +14,7 @@ class UserModel {
   final DateTime? lastActive;
   final int points;
   final List<String> badges;
+  final bool emailVerified;
 
   UserModel({
     required this.id,
@@ -31,6 +32,7 @@ class UserModel {
     this.lastActive,
     this.points = 0,
     this.badges = const [],
+    this.emailVerified = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -50,6 +52,7 @@ class UserModel {
       'lastActive': lastActive?.toIso8601String(),
       'points': points,
       'badges': badges,
+      'emailVerified': emailVerified,
     };
   }
 
@@ -72,6 +75,7 @@ class UserModel {
           : null,
       points: json['points'] ?? 0,
       badges: List<String>.from(json['badges'] ?? []),
+      emailVerified: json['emailVerified'] ?? false,
     );
   }
 
@@ -91,6 +95,7 @@ class UserModel {
     DateTime? lastActive,
     int? points,
     List<String>? badges,
+    bool? emailVerified,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -108,6 +113,7 @@ class UserModel {
       lastActive: lastActive ?? this.lastActive,
       points: points ?? this.points,
       badges: badges ?? this.badges,
+      emailVerified: emailVerified ?? this.emailVerified,
     );
   }
 }

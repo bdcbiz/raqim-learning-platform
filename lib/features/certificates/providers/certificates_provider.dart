@@ -90,7 +90,7 @@ class CertificatesProvider extends ChangeNotifier {
         certificateNumber: 'CERT-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
         issuedDate: DateTime.now(),
         finalGrade: _calculateFinalGrade(progress.quizScores),
-        certificateUrl: 'https://example.com/certificate/${courseId}',
+        certificateUrl: 'https://example.com/certificate/$courseId',
         courseDetails: {
           'modules_completed': 10,
           'assignments_completed': 5,

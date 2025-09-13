@@ -12,7 +12,7 @@ class ModernButton extends StatelessWidget {
   final double? height;
 
   const ModernButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.backgroundColor,
@@ -21,7 +21,7 @@ class ModernButton extends StatelessWidget {
     this.isLoading = false,
     this.width,
     this.height,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

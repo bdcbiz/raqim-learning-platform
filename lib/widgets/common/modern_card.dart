@@ -10,14 +10,14 @@ class ModernCard extends StatelessWidget {
   final Color? color;
 
   const ModernCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
     this.margin,
     this.onTap,
     this.elevation,
     this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

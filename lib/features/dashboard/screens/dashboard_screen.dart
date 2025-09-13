@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../courses/screens/courses_list_screen.dart';
 import '../../community/screens/community_feed_screen.dart';
@@ -10,8 +9,8 @@ import '../../profile/screens/profile_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../core/providers/app_settings_provider.dart';
 import '../../../core/widgets/adaptive_logo.dart';
+import '../../../services/analytics/analytics_service_factory.dart';
 import 'modern_home_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -74,10 +73,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             NavigationRail(
               extended: MediaQuery.of(context).size.width > 1200,
               selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) {
+              onDestinationSelected: (index) async {
                 setState(() {
                   _selectedIndex = index;
                 });
+                await _trackNavigation(index);
               },
               labelType: NavigationRailLabelType.none,
               backgroundColor: AppColors.primaryColor,
@@ -103,15 +103,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const AdaptiveLogo(height: 32, useWhiteVersion: true),
-                    const SizedBox(height: 8),
-                    Text(
-                      'رقيم',
-                      style: AppTextStyles.body.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -139,14 +130,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Row(
           children: [
             const AdaptiveLogo(height: 32),
-            const SizedBox(width: 8),
-            Text(
-              'رقيم',
-              style: AppTextStyles.h2.copyWith(
-                color: AppColors.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ],
         ),
       ),
@@ -154,10 +137,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       extendBody: false,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
+        onDestinationSelected: (index) async {
           setState(() {
             _selectedIndex = index;
           });
+          await _trackNavigation(index);
         },
         destinations: _destinations(context),
         backgroundColor: AppColors.white,
@@ -166,6 +150,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         height: 65,
       ),
+    );
+  }
+
+  Future<void> _trackNavigation(int index) async {
+    final analytics = AnalyticsServiceFactory.instance;
+    final screenNames = ['home', 'my_courses', 'community', 'news', 'profile'];
+
+    if (index < screenNames.length) {
+      await analytics.setCurrentScreen(
+        screenName: 'dashboard_${screenNames[index]}',
+        screenClass: 'DashboardScreen',
+      );
+
+      await analytics.logEvent('navigation_tap', {
+        'destination': screenNames[index],
+        'from_screen': 'dashboard',
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initAnalytics();
+  }
+
+  Future<void> _initAnalytics() async {
+    final analytics = AnalyticsServiceFactory.instance;
+    await analytics.setCurrentScreen(
+      screenName: 'dashboard_home',
+      screenClass: 'DashboardScreen',
     );
   }
 }

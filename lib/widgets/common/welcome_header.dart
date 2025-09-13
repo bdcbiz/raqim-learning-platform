@@ -7,11 +7,11 @@ class WelcomeHeader extends StatelessWidget {
   final VoidCallback? onAvatarTap;
 
   const WelcomeHeader({
-    Key? key,
+    super.key,
     required this.userName,
     this.userAvatarUrl,
     this.onAvatarTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

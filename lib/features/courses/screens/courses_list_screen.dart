@@ -7,7 +7,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
-import '../../../widgets/common/course_card.dart';
+import '../../../widgets/common/modern_course_card.dart';
 
 class CoursesListScreen extends StatefulWidget {
   final bool showOnlyEnrolled;
@@ -23,6 +23,21 @@ class CoursesListScreen extends StatefulWidget {
 
 class _CoursesListScreenState extends State<CoursesListScreen> {
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if there's a search query in the URL
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uri = GoRouterState.of(context).uri;
+      final searchQuery = uri.queryParameters['search'];
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        _searchController.text = searchQuery;
+        Provider.of<CoursesProvider>(context, listen: false)
+            .filterCourses(searchQuery: searchQuery);
+      }
+    });
+  }
   
   String _getLocalizedCourseTitle(dynamic course, BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -172,14 +187,15 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                           itemCount: displayCourses.length,
                           itemBuilder: (context, index) {
                             final course = displayCourses[index];
-                            return CourseCard(
+                            return ModernCourseCard(
                               title: _getLocalizedCourseTitle(course, context),
                               instructor: _getLocalizedInstructorName(course, context),
                               imageUrl: course.thumbnailUrl,
-                              lessonsCount: course.lessons?.length ?? 12,
-                              duration: '${course.duration ?? 8} ساعات',
+                              category: course.category ?? 'تعلم الآلة',
+                              studentsCount: 500,
                               price: course.price == 0 ? 'مجاني' : '${course.price.toInt()} ر.س',
                               rating: course.rating,
+                              categoryColor: ModernCourseCard.getCategoryColor(course.category ?? 'تعلم الآلة'),
                               onTap: () {
                                 Provider.of<CoursesProvider>(context, listen: false).selectCourse(course.id);
                                 context.go('/course/${course.id}');
