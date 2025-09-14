@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'mock_data_service.dart';
 
 class ApiService {
   static String get baseUrl {
@@ -139,19 +140,16 @@ class ApiService {
     int page = 1,
     int limit = 10,
   }) async {
+    // Use mock data service instead of API
     try {
-      String url = '$baseUrl/courses?page=$page&limit=$limit';
-      
-      if (category != null) url += '&category=$category';
-      if (level != null) url += '&level=$level';
-      if (search != null) url += '&search=$search';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: await _headers,
+      final mockService = MockDataService();
+      return await mockService.getCourses(
+        category: category,
+        level: level,
+        search: search,
+        page: page,
+        limit: limit,
       );
-
-      return jsonDecode(response.body);
     } catch (e) {
       throw Exception('Failed to get courses: $e');
     }

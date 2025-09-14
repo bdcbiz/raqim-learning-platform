@@ -179,7 +179,7 @@ class CommunityFeedScreen extends StatelessWidget {
                                             ? Colors.red 
                                             : Colors.grey[600],
                                       ),
-                                      onPressed: () => communityProvider.votePost(post.id, true),
+                                      onPressed: () => communityProvider.votePost(post.id, true, 'current_user'),
                                     ),
                                     Text('${post.upvotes}'),
                                   ],
@@ -195,7 +195,7 @@ class CommunityFeedScreen extends StatelessWidget {
                                             ? Colors.blue 
                                             : Colors.grey[600],
                                       ),
-                                      onPressed: () => communityProvider.votePost(post.id, false),
+                                      onPressed: () => communityProvider.votePost(post.id, false, 'current_user'),
                                     ),
                                     Text('${post.downvotes}'),
                                   ],
@@ -267,50 +267,55 @@ class CommunityFeedScreen extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: post.comments.length,
-                itemBuilder: (context, index) {
-                  final comment = post.comments[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: comment.userPhotoUrl != null
-                              ? NetworkImage(comment.userPhotoUrl!)
-                              : null,
-                          child: comment.userPhotoUrl == null
-                              ? Text(comment.userName[0], style: const TextStyle(fontSize: 12))
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+              child: Consumer<CommunityProvider>(
+                builder: (context, provider, child) {
+                  final currentPost = provider.posts.firstWhere((p) => p.id == post.id, orElse: () => post);
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: currentPost.comments.length,
+                    itemBuilder: (context, index) {
+                      final comment = currentPost.comments[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundImage: comment.userPhotoUrl != null
+                                  ? NetworkImage(comment.userPhotoUrl!)
+                                  : null,
+                              child: comment.userPhotoUrl == null
+                                  ? Text(comment.userName[0], style: const TextStyle(fontSize: 12))
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    comment.userName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        comment.userName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _formatTime(comment.createdAt, context),
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _formatTime(comment.createdAt, context),
-                                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(comment.content, style: const TextStyle(fontSize: 13)),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(comment.content, style: const TextStyle(fontSize: 13)),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -343,7 +348,7 @@ class CommunityFeedScreen extends StatelessWidget {
                     icon: const Icon(Icons.send, color: Colors.blue),
                     onPressed: () {
                       if (commentController.text.trim().isNotEmpty) {
-                        communityProvider.addComment(post.id, commentController.text.trim());
+                        communityProvider.addComment(post.id, commentController.text.trim(), context);
                         commentController.clear();
                       }
                     },

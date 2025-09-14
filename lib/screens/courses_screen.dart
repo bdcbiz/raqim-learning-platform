@@ -28,10 +28,14 @@ class _CoursesScreenState extends State<CoursesScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('جميع الدورات'),
+        title: const Text(
+          'جميع الدورات',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
       body: Consumer<CourseProvider>(
@@ -351,7 +355,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         crossAxisCount: MediaQuery.of(context).size.width > 600
                             ? 3
                             : 2,
-                        childAspectRatio: 0.75,
+                        childAspectRatio: MediaQuery.of(context).size.width > 600
+                            ? 1.05
+                            : 0.75,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),

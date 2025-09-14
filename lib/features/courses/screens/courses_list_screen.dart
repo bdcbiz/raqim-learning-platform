@@ -180,7 +180,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                           padding: const EdgeInsets.all(16),
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: isWideScreen ? 3 : 2,
-                            childAspectRatio: isWideScreen ? 0.85 : 0.75,
+                            childAspectRatio: isWideScreen ? 1.3 : 0.85,  // Adjusted aspect ratio for web to fit content exactly
                             crossAxisSpacing: isWideScreen ? 16 : 12,
                             mainAxisSpacing: isWideScreen ? 16 : 12,
                           ),
@@ -223,13 +223,38 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         'type': 'category'
       },
       {
-        'label': AppLocalizations.of(context)?.translate('naturalLanguageProcessing') ?? 'معالجة اللغات الطبيعية',
-        'value': 'معالجة اللغات الطبيعية',
+        'label': 'معالجة اللغات', // Match mock data exactly
+        'value': 'معالجة اللغات',
         'type': 'category'
       },
       {
-        'label': AppLocalizations.of(context)?.translate('computerVision') ?? 'رؤية الحاسوب',
+        'label': 'رؤية الحاسوب', // Match mock data exactly
         'value': 'رؤية الحاسوب',
+        'type': 'category'
+      },
+      {
+        'label': 'البرمجة', // Add missing category from mock data
+        'value': 'البرمجة',
+        'type': 'category'
+      },
+      {
+        'label': 'الذكاء التوليدي', // Add missing category from mock data
+        'value': 'الذكاء التوليدي',
+        'type': 'category'
+      },
+      {
+        'label': 'التعلم العميق', // Add missing category from mock data
+        'value': 'التعلم العميق',
+        'type': 'category'
+      },
+      {
+        'label': 'علم البيانات', // Add missing category from mock data
+        'value': 'علم البيانات',
+        'type': 'category'
+      },
+      {
+        'label': 'الأعمال', // Add missing category from mock data
+        'value': 'الأعمال',
         'type': 'category'
       },
       {

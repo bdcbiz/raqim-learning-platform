@@ -366,81 +366,86 @@ class NewsFeedScreen extends StatelessWidget {
               
               // Comments list
               Expanded(
-                child: article.comments?.isNotEmpty == true
-                    ? ListView.builder(
-                        controller: scrollController,
-                        itemCount: article.comments!.length,
-                        itemBuilder: (context, index) {
-                          final comment = article.comments![index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.grey[300],
-                                  child: comment.authorAvatar != null 
-                                      ? ClipOval(child: Image.network(comment.authorAvatar!))
-                                      : Text(comment.authorName[0].toUpperCase()),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                child: Consumer<NewsProvider>(
+                  builder: (context, newsProvider, child) {
+                    final currentArticle = newsProvider.news.firstWhere((n) => n.id == article.id, orElse: () => article);
+                    return currentArticle.comments?.isNotEmpty == true
+                        ? ListView.builder(
+                            controller: scrollController,
+                            itemCount: currentArticle.comments!.length,
+                            itemBuilder: (context, index) {
+                              final comment = currentArticle.comments![index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.grey[300],
+                                      child: comment.authorAvatar != null
+                                          ? ClipOval(child: Image.network(comment.authorAvatar!))
+                                          : Text(comment.authorName[0].toUpperCase()),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            comment.authorName,
-                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                comment.authorName,
+                                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                _formatDate(comment.createdAt, context),
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(width: 8),
+                                          const SizedBox(height: 4),
                                           Text(
-                                            _formatDate(comment.createdAt, context),
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Colors.grey[600],
-                                            ),
+                                            comment.content,
+                                            style: Theme.of(context).textTheme.bodyMedium,
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        comment.content,
-                                        style: Theme.of(context).textTheme.bodyMedium,
-                                      ),
-                                    ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.comment_outlined, size: 48, color: Colors.grey[400]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'لا توجد تعليقات بعد',
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'كن أول من يعلق على هذا الخبر',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[500],
                                   ),
                                 ),
                               ],
                             ),
                           );
-                        },
-                      )
-                    : Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.comment_outlined, size: 48, color: Colors.grey[400]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'لا توجد تعليقات بعد',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'كن أول من يعلق على هذا الخبر',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                  },
+                ),
               ),
               
               // Comment input

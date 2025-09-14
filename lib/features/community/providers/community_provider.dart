@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/post_model.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../services/auth/auth_interface.dart';
+import '../../../services/database/database_service.dart';
 
 class CommunityProvider extends ChangeNotifier {
   List<PostModel> _posts = [];
@@ -7,6 +11,7 @@ class CommunityProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String _sortBy = 'recent';
+  final DatabaseService _databaseService = DatabaseService();
 
   List<PostModel> get posts {
     if (_sortBy == 'popular') {
@@ -53,11 +58,45 @@ class CommunityProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> createPost(String title, String content, List<String> tags) async {
+  Future<void> createPost(String title, String content, List<String> tags, BuildContext context) async {
+    // Get current user information
+    String userName = 'المستخدم الحالي';
+    String userId = 'current_user';
+
+    try {
+      // Try to get user from WebAuthService first (for web)
+      final authService = Provider.of<AuthServiceInterface>(context, listen: false);
+      final webUser = authService.currentUser;
+
+      // Fallback to AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final authProviderUser = authProvider.currentUser;
+
+      // Use whichever has a user
+      final user = webUser ?? authProviderUser;
+
+      if (user != null) {
+        userName = user.name ?? user.email ?? 'المستخدم الحالي';
+        userId = user.id ?? 'current_user';
+      }
+    } catch (e) {
+      // If there's an error getting user info, use defaults
+      print('Error getting user info for post: $e');
+    }
+
+    // Save post to database first
+    String postId = await _databaseService.createPost(
+      userId: userId,
+      userName: userName,
+      title: title,
+      content: content,
+      tags: tags,
+    );
+
     final newPost = PostModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: 'current_user',
-      userName: 'المستخدم الحالي',
+      id: postId,
+      userId: userId,
+      userName: userName,
       title: title,
       content: content,
       tags: tags,
@@ -67,13 +106,21 @@ class CommunityProvider extends ChangeNotifier {
 
     _posts.insert(0, newPost);
     notifyListeners();
+
+    // Track user interaction
+    await _databaseService.trackUserInteraction(
+      userId: userId,
+      action: 'create',
+      targetType: 'post',
+      targetId: postId,
+      metadata: {'title': title, 'tags': tags},
+    );
   }
 
-  Future<void> votePost(String postId, bool isUpvote) async {
+  Future<void> votePost(String postId, bool isUpvote, String userId) async {
     final postIndex = _posts.indexWhere((p) => p.id == postId);
     if (postIndex != -1) {
       final post = _posts[postIndex];
-      final userId = 'current_user';
 
       List<String> upvotedBy = [...post.upvotedBy];
       List<String> downvotedBy = [...post.downvotedBy];
@@ -102,30 +149,99 @@ class CommunityProvider extends ChangeNotifier {
       );
 
       notifyListeners();
+
+      // Save vote to database
+      await _databaseService.votePost(postId, userId, isUpvote);
+
+      // Track user interaction
+      await _databaseService.trackUserInteraction(
+        userId: userId,
+        action: isUpvote ? 'upvote' : 'downvote',
+        targetType: 'post',
+        targetId: postId,
+      );
     }
   }
 
-  Future<void> addComment(String postId, String content) async {
-    final postIndex = _posts.indexWhere((p) => p.id == postId);
-    if (postIndex != -1) {
-      final post = _posts[postIndex];
-      final newComment = Comment(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: 'current_user',
-        userName: 'المستخدم الحالي',
-        content: content,
-        createdAt: DateTime.now(),
-      );
+  Future<void> addComment(String postId, String content, BuildContext context) async {
+    try {
+      final postIndex = _posts.indexWhere((p) => p.id == postId);
+      if (postIndex != -1) {
+        final post = _posts[postIndex];
 
-      _posts[postIndex] = post.copyWith(
-        comments: [...post.comments, newComment],
-      );
+        // Get current user information
+        String userName = 'المستخدم الحالي';
+        String userId = 'current_user';
 
-      if (_selectedPost?.id == postId) {
-        _selectedPost = _posts[postIndex];
+        try {
+          // Try to get user from WebAuthService first (for web)
+          final authService = Provider.of<AuthServiceInterface>(context, listen: false);
+          final webUser = authService.currentUser;
+
+          // Fallback to AuthProvider
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProviderUser = authProvider.currentUser;
+
+          // Use whichever has a user
+          final user = webUser ?? authProviderUser;
+
+          if (user != null) {
+            userName = user.name ?? user.email ?? 'المستخدم الحالي';
+            userId = user.id ?? 'current_user';
+          }
+        } catch (e) {
+          // If there's an error getting user info, use defaults
+          print('Error getting user info for comment: $e');
+        }
+
+        // Generate a unique comment ID
+        String commentId = 'comment_${DateTime.now().millisecondsSinceEpoch}';
+
+        // Create new comment locally first
+        final newComment = Comment(
+          id: commentId,
+          userId: userId,
+          userName: userName,
+          content: content,
+          createdAt: DateTime.now(),
+        );
+
+        _posts[postIndex] = post.copyWith(
+          comments: [...post.comments, newComment],
+        );
+
+        if (_selectedPost?.id == postId) {
+          _selectedPost = _posts[postIndex];
+        }
+
+        notifyListeners();
+
+        // Try to save to database (but don't fail if it doesn't work)
+        try {
+          await _databaseService.addComment(
+            userId: userId,
+            userName: userName,
+            content: content,
+            targetId: postId,
+            targetType: 'post',
+          );
+
+          // Track user interaction
+          await _databaseService.trackUserInteraction(
+            userId: userId,
+            action: 'comment',
+            targetType: 'post',
+            targetId: postId,
+            metadata: {'comment_id': commentId},
+          );
+        } catch (e) {
+          // Database operation failed, but local comment was added successfully
+          print('Warning: Failed to save comment to database, but added locally: $e');
+        }
       }
-
-      notifyListeners();
+    } catch (e) {
+      print('Error adding comment: $e');
+      // Don't throw error to UI, just log it
     }
   }
 

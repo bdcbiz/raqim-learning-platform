@@ -43,19 +43,17 @@ class ModernCourseCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // 👈 مهم: يخلي العمود ياخد قد المحتوى بس
           children: [
             // Image with category badge
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   child: AspectRatio(
-                    aspectRatio: 16 / 10,
+                    aspectRatio: 16 / 9,
                     child: Image.network(
                       imageUrl,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.fill,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
                           color: Colors.grey[200],
@@ -73,8 +71,7 @@ class ModernCourseCard extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: categoryColor,
                       borderRadius: BorderRadius.circular(6),
@@ -92,93 +89,95 @@ class ModernCourseCard extends StatelessWidget {
               ],
             ),
             // Content
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min, // 👈 مهم هنا برضو
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1F2937),
-                      height: 1.3,
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                        height: 1.3,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Instructor
-                  Text(
-                    instructor,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      height: 1.2,
+                    const SizedBox(height: 1),
+                    // Instructor
+                    Text(
+                      instructor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        height: 1.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Stats row
-                  Row(
-                    children: [
-                      // Students count
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '$studentsCount+',
-                            style: TextStyle(
-                              fontSize: 11,
+                    const SizedBox(height: 2),
+                    // Stats row
+                    Row(
+                      children: [
+                        // Students count
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 14,
                               color: Colors.grey[600],
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                      // Rating
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            size: 14,
-                            color: Color(0xFFFFB800),
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            rating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(width: 3),
+                            Text(
+                              '$studentsCount+',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      // Price
-                      Text(
-                        price,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: price == 'مجاني'
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFF6366F1),
-                          fontWeight: FontWeight.w600,
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 8),
+                        // Rating
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 14,
+                              color: Color(0xFFFFB800),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Price
+                        Text(
+                          price,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: price == 'مجاني'
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF6366F1),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

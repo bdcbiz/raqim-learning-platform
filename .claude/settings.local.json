@@ -56,7 +56,11 @@
       "Bash(start http://localhost:61740)",
       "Bash(start http://localhost:50896)",
       "Bash(cmd /c:*)",
-      "Bash(del libservicesfirebasefirebase_service.dart)"
+      "Bash(del libservicesfirebasefirebase_service.dart)",
+      "mcp__ide__getDiagnostics",
+      "Bash(move:*)",
+      "Bash(start:*)",
+      "Bash(printf:*)"
     ],
     "deny": [],
     "ask": []

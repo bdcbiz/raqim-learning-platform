@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
+import 'dart:convert';
+import 'dart:math' as Math;
 import '../../auth/providers/auth_provider.dart';
+import '../../../services/auth/auth_interface.dart';
+import '../../../services/auth/web_auth_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 
@@ -19,7 +23,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
 
-  Future<void> _pickImage(BuildContext context) async {
+  Future<void> _pickImage(BuildContext parentContext) async {
+    // Capture scaffold messenger early
+    final scaffoldMessenger = ScaffoldMessenger.of(parentContext);
+    final authProvider = Provider.of<AuthProvider>(parentContext, listen: false);
+    final authService = Provider.of<AuthServiceInterface>(parentContext, listen: false);
+
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -28,67 +37,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
         imageQuality: 75,
       );
 
-      if (image != null) {
+      if (image != null && mounted) {
         setState(() {
           _isUploading = true;
         });
 
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        
         // Upload image to server and get URL
         try {
-          // For web, read bytes
+          // For web, read bytes and convert to base64
           if (kIsWeb) {
             final bytes = await image.readAsBytes();
-            // In production, upload bytes to server
-            // For now, use data URL for immediate display
-            final base64Image = 'data:image/png;base64,${Uri.encodeComponent(String.fromCharCodes(bytes))}';
+            // Convert to base64 data URL
+            final base64String = base64Encode(bytes);
+            final base64Image = 'data:image/png;base64,$base64String';
+
+            // Update both auth services
             await authProvider.updateProfileImage(base64Image);
+
+            // If WebAuthService is available, update it too
+            if (authService is WebAuthService) {
+              final webAuth = authService as dynamic;
+              await webAuth.updateProfilePhoto(base64Image);
+
+              // Force reload user from WebAuthService
+              await authService.reloadUser();
+            }
           } else {
             // For mobile, upload file to server
             // TODO: Implement actual API upload
             // final response = await ApiService.uploadAvatar(image.path);
             // await authProvider.updateProfileImage(response['url']);
-            
+
             // For now, use local path
             await authProvider.updateProfileImage(image.path);
           }
-          
+
           // Force refresh the UI
           if (mounted) {
             setState(() {
               _isUploading = false;
             });
+
+            scaffoldMessenger.showSnackBar(
+              const SnackBar(
+                content: Text('تم تحديث صورة الملف الشخصي بنجاح'),
+                backgroundColor: Colors.green,
+              ),
+            );
           }
         } catch (uploadError) {
           // If upload fails, still update locally for preview
-          await authProvider.updateProfileImage(image.path);
-          
+          if (kIsWeb) {
+            final bytes = await image.readAsBytes();
+            final base64String = base64Encode(bytes);
+            final base64Image = 'data:image/png;base64,$base64String';
+            await authProvider.updateProfileImage(base64Image);
+
+            // Update WebAuthService too
+            if (authService is WebAuthService) {
+              final webAuth = authService as dynamic;
+              await webAuth.updateProfilePhoto(base64Image);
+
+              // Force reload user from WebAuthService
+              await authService.reloadUser();
+            }
+          } else {
+            await authProvider.updateProfileImage(image.path);
+          }
+
           if (mounted) {
             setState(() {
               _isUploading = false;
             });
-          }
-        }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)?.translate('profileImageUpdated') ?? 'تم تحديث صورة الملف الشخصي بنجاح'),
-              backgroundColor: Colors.green,
-            ),
-          );
+            scaffoldMessenger.showSnackBar(
+              const SnackBar(
+                content: Text('تم تحديث الصورة محلياً'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
-      setState(() {
-        _isUploading = false;
-      });
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        setState(() {
+          _isUploading = false;
+        });
+
+        scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text('${AppLocalizations.of(context)?.translate('errorOccurred') ?? 'حدث خطأ'}: ${e.toString()}'),
+            content: Text('حدث خطأ: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -223,20 +262,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileImage(dynamic user) {
+    print('DEBUG: _buildProfileImage called');
+    print('DEBUG: user photoUrl: ${user?.photoUrl?.substring(0, 100) ?? 'null'}');
+
     if (user?.photoUrl != null && user.photoUrl.isNotEmpty) {
       // Check if it's a data URL (for web)
       if (user.photoUrl.startsWith('data:')) {
-        return ClipOval(
-          child: Image.memory(
-            Uri.parse(user.photoUrl.split(',')[1]).data!.contentAsBytes(),
-            width: 96,
-            height: 96,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildDefaultAvatar(user);
-            },
-          ),
-        );
+        try {
+          print('DEBUG: Processing base64 image');
+          // Extract the base64 part from the data URL
+          final base64String = user.photoUrl.split(',')[1];
+          final imageBytes = base64Decode(base64String);
+          print('DEBUG: Decoded ${imageBytes.length} bytes');
+
+          return ClipOval(
+            child: Image.memory(
+              imageBytes,
+              width: 96,
+              height: 96,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                print('DEBUG: Error loading image: $error');
+                return _buildDefaultAvatar(user);
+              },
+            ),
+          );
+        } catch (e) {
+          print('DEBUG: Exception processing image: $e');
+          return _buildDefaultAvatar(user);
+        }
       }
       // Check if it's a network URL
       else if (user.photoUrl.startsWith('http')) {
@@ -296,8 +350,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Try to get user from WebAuthService first (for web)
+    final authService = Provider.of<AuthServiceInterface>(context);
+    final webUser = authService.currentUser;
+
+    // Fallback to AuthProvider
     final authProvider = Provider.of<AuthProvider>(context);
-    final user = authProvider.currentUser;
+    final user = webUser ?? authProvider.currentUser;
+
+    print('DEBUG: Profile build - webUser: ${webUser?.email}, authProvider user: ${authProvider.currentUser?.email}');
+    print('DEBUG: Using user with photoUrl: ${user?.photoUrl?.substring(0, Math.min(100, user.photoUrl?.length ?? 0)) ?? 'null'}');
 
     return Scaffold(
       appBar: AppBar(
@@ -454,7 +516,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        await authProvider.logout();
+                        // For web, use WebAuthService's signOut
+                        if (kIsWeb && authService is WebAuthService) {
+                          await authService.signOut();
+                        } else {
+                          // For mobile, use AuthProvider's logout
+                          await authProvider.logout();
+                        }
+
                         if (context.mounted) {
                           context.go('/login');
                         }

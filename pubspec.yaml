@@ -51,7 +51,7 @@ dependencies:
   # Firebase (Complete Firebase Suite)
   firebase_core: ^2.24.2
   firebase_analytics: ^10.8.0
-  # cloud_firestore: ^4.13.6
+  cloud_firestore: ^4.13.6
   # firebase_auth: ^4.15.3
   # firebase_storage: ^11.5.6
 

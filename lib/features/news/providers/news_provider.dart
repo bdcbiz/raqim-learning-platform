@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/news_model.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../services/auth/auth_interface.dart';
+import '../../../services/database/database_service.dart';
 
 class NewsProvider extends ChangeNotifier {
   List<NewsModel> _news = [];
   bool _isLoading = false;
   String? _error;
   String _selectedCategory = 'الكل';
+  final DatabaseService _databaseService = DatabaseService();
 
   List<NewsModel> get news {
     if (_selectedCategory == 'الكل') {
@@ -63,24 +68,32 @@ class NewsProvider extends ChangeNotifier {
     await loadNews();
   }
 
-  Future<void> toggleLike(String newsId) async {
+  Future<void> toggleLike(String newsId, String userId) async {
     try {
       final newsIndex = _news.indexWhere((n) => n.id == newsId);
       if (newsIndex != -1) {
         final currentNews = _news[newsIndex];
-        final newLikesCount = currentNews.isLiked 
-            ? currentNews.likesCount - 1 
+        final newLikesCount = currentNews.isLiked
+            ? currentNews.likesCount - 1
             : currentNews.likesCount + 1;
-            
+
         _news[newsIndex] = currentNews.copyWith(
           isLiked: !currentNews.isLiked,
           likesCount: newLikesCount,
         );
-        
+
         notifyListeners();
-        
-        // In production, send API request to backend
-        // await http.put(Uri.parse('${AppConstants.baseUrl}/api/v1/news/$newsId/like'));
+
+        // Save to database
+        await _databaseService.likeNews(newsId, userId);
+
+        // Track user interaction
+        await _databaseService.trackUserInteraction(
+          userId: userId,
+          action: currentNews.isLiked ? 'unlike' : 'like',
+          targetType: 'news',
+          targetId: newsId,
+        );
       }
     } catch (e) {
       _error = 'فشل في تحديث الإعجاب: ${e.toString()}';
@@ -88,30 +101,79 @@ class NewsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addComment(String newsId, String content) async {
+  Future<void> addComment(String newsId, String content, BuildContext context) async {
     try {
       final newsIndex = _news.indexWhere((n) => n.id == newsId);
       if (newsIndex != -1) {
         final currentNews = _news[newsIndex];
+        // Get current user information
+        String userName = 'المستخدم الحالي';
+        String userId = 'current_user';
+
+        try {
+          // Try to get user from WebAuthService first (for web)
+          final authService = Provider.of<AuthServiceInterface>(context, listen: false);
+          final webUser = authService.currentUser;
+
+          // Fallback to AuthProvider
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProviderUser = authProvider.currentUser;
+
+          // Use whichever has a user
+          final user = webUser ?? authProviderUser;
+
+          if (user != null) {
+            userName = user.name ?? user.email ?? 'المستخدم الحالي';
+            userId = user.id ?? 'current_user';
+          }
+        } catch (e) {
+          // If there's an error getting user info, use defaults
+          print('Error getting user info for news comment: $e');
+        }
+
+        // Generate a unique comment ID
+        String commentId = 'comment_${DateTime.now().millisecondsSinceEpoch}';
+
+        // Create new comment locally first
         final newComment = NewsComment(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: commentId,
           content: content,
-          authorName: 'المستخدم الحالي', // In production, get from auth
+          authorName: userName,
           createdAt: DateTime.now(),
         );
-        
+
         final updatedComments = List<NewsComment>.from(currentNews.comments ?? []);
         updatedComments.insert(0, newComment);
-        
+
         _news[newsIndex] = currentNews.copyWith(
           comments: updatedComments,
           commentsCount: updatedComments.length,
         );
-        
+
         notifyListeners();
-        
-        // In production, send API request to backend
-        // await http.post(Uri.parse('${AppConstants.baseUrl}/api/v1/news/$newsId/comments'));
+
+        // Try to save to database (but don't fail if it doesn't work)
+        try {
+          await _databaseService.addComment(
+            userId: userId,
+            userName: userName,
+            content: content,
+            targetId: newsId,
+            targetType: 'news',
+          );
+
+          // Track user interaction
+          await _databaseService.trackUserInteraction(
+            userId: userId,
+            action: 'comment',
+            targetType: 'news',
+            targetId: newsId,
+            metadata: {'comment_id': commentId},
+          );
+        } catch (e) {
+          // Database operation failed, but local comment was added successfully
+          print('Warning: Failed to save comment to database, but added locally: $e');
+        }
       }
     } catch (e) {
       _error = 'فشل في إضافة التعليق: ${e.toString()}';
@@ -132,7 +194,7 @@ class NewsProvider extends ChangeNotifier {
         publishedAt: DateTime.now().subtract(const Duration(hours: 3)),
         author: 'John Doe',
         likesCount: 45,
-        commentsCount: 8,
+        commentsCount: 2,
         isLiked: false,
         comments: [
           NewsComment(

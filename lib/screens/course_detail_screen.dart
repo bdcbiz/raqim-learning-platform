@@ -312,7 +312,7 @@ class CourseDetailScreen extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        final success = await provider.enrollInCourse(course.id);
+                        final success = await provider.enrollInCourse(course.id, 'current_user');
                         if (success) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

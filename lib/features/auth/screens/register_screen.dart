@@ -7,6 +7,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../../services/auth/auth_service_factory.dart';
+import '../../../services/validation/email_validation_service.dart';
+import '../../../services/database/database_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,6 +24,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _acceptTerms = false;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _isValidatingEmail = false;
+  String? _emailValidationMessage;
+  String? _emailSuggestion;
+  final EmailValidationService _emailValidator = EmailValidationService();
+  final DatabaseService _databaseService = DatabaseService();
+
+  Future<void> _validateEmailField(String email) async {
+    if (email.isEmpty) {
+      setState(() {
+        _emailValidationMessage = null;
+        _emailSuggestion = null;
+        _isValidatingEmail = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isValidatingEmail = true;
+    });
+
+    try {
+      EmailValidationResult result = await _emailValidator.validateEmail(email);
+
+      setState(() {
+        _isValidatingEmail = false;
+        if (result.isValid) {
+          _emailValidationMessage = null;
+          _emailSuggestion = null;
+        } else {
+          _emailValidationMessage = result.reason;
+          _emailSuggestion = result.suggestion;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isValidatingEmail = false;
+        _emailValidationMessage = 'فشل في التحقق من البريد الإلكتروني';
+        _emailSuggestion = null;
+      });
+    }
+  }
+
+  void _applySuggestedEmail() {
+    if (_emailSuggestion != null) {
+      _formKey.currentState?.fields['email']?.didChange(_emailSuggestion);
+      setState(() {
+        _emailValidationMessage = null;
+        _emailSuggestion = null;
+      });
+    }
+  }
 
   void _handleRegister() async {
     if (!_acceptTerms) {
@@ -55,6 +108,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (result.success && mounted) {
+        // Create user in database after successful Firebase registration
+        if (result.user != null) {
+          try {
+            await _databaseService.createUser(result.user!);
+            print('DEBUG: User created in database successfully');
+          } catch (e) {
+            print('ERROR: Failed to create user in database: $e');
+            // Continue anyway - user is already registered in Firebase
+          }
+        }
+
         if (result.status == AuthenticationStatus.authenticated) {
           context.go('/');
         } else if (result.status == AuthenticationStatus.emailNotVerified) {
@@ -144,6 +208,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: InputDecoration(
                 labelText: localizations?.translate('email') ?? 'البريد الإلكتروني',
                 prefixIcon: const Icon(Icons.email_outlined),
+                suffixIcon: _isValidatingEmail
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: Padding(
+                          padding: EdgeInsets.all(12),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : _emailValidationMessage == null
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : const Icon(Icons.error, color: Colors.red),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -158,14 +234,89 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
               ),
               keyboardType: TextInputType.emailAddress,
+              onChanged: (value) {
+                if (value != null && value.isNotEmpty) {
+                  // Debounce email validation
+                  Future.delayed(const Duration(milliseconds: 800), () {
+                    if (_formKey.currentState?.fields['email']?.value == value) {
+                      _validateEmailField(value);
+                    }
+                  });
+                }
+              },
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(errorText: localizations?.translate('emailRequired') ?? 'البريد الإلكتروني مطلوب'),
                 FormBuilderValidators.email(errorText: localizations?.translate('enterValidEmail') ?? 'أدخل بريد إلكتروني صحيح'),
+                (value) {
+                  if (_emailValidationMessage != null) {
+                    return _emailValidationMessage;
+                  }
+                  return null;
+                },
               ]),
             ),
-            const SizedBox(height: 16),
+            // Email suggestion widget
+            if (_emailSuggestion != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(top: 8, bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lightbulb_outline, color: Colors.blue, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'هل تقصد:',
+                            style: TextStyle(color: Colors.blue[800], fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: _applySuggestedEmail,
+                            child: Text(
+                              _emailSuggestion!,
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        setState(() {
+                          _emailSuggestion = null;
+                          _emailValidationMessage = null;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              )
+            else
+              const SizedBox(height: 16),
             FormBuilderTextField(
               name: 'password',
               decoration: InputDecoration(

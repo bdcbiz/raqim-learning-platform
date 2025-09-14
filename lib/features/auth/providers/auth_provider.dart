@@ -209,12 +209,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await ApiService.logout();
+    try {
+      // Try to logout from API (but don't fail if server is down)
+      await ApiService.logout();
+    } catch (e) {
+      print('API logout failed (continuing with local logout): $e');
+    }
+
+    // Clear local data regardless of API result
     await _prefs.clear();
-    
+
     // Clear all cached data
     await CacheService.clearAllCache();
-    
+
     _currentUser = null;
     notifyListeners();
   }
@@ -230,6 +237,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> updateProfileImage(String imagePath) async {
+    print('DEBUG: updateProfileImage called with path: ${imagePath.substring(0, 100)}...');
     if (_currentUser != null) {
       // Update the current user model with new image
       _currentUser = UserModel(
@@ -240,16 +248,20 @@ class AuthProvider extends ChangeNotifier {
         bio: _currentUser!.bio,
         createdAt: _currentUser!.createdAt,
       );
-      
+
+      print('DEBUG: User photoUrl updated to: ${_currentUser!.photoUrl?.substring(0, 100)}...');
+
       // Save to SharedPreferences
       await _saveUser();
-      
+
       // Update cache
       await CacheService.cacheUserData(_currentUser!);
-      
-      // Notify all listeners immediately to refresh UI
+
+      // Force immediate UI update
       notifyListeners();
-      
+
+      print('DEBUG: Notified listeners about photo update');
+
       // Try to upload to server in background
       if (imagePath.startsWith('/') || imagePath.startsWith('file://')) {
         // This is a local file, should upload to server

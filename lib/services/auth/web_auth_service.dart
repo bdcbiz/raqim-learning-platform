@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as Math;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'auth_interface.dart';
 import '../../data/models/user_model.dart';
+import '../database/firestore_service.dart';
+import '../tracking/interaction_tracker.dart';
+import '../database/local_database_service.dart';
 
 class WebAuthService extends AuthServiceInterface {
   static final WebAuthService _instance = WebAuthService._internal();
@@ -18,6 +22,9 @@ class WebAuthService extends AuthServiceInterface {
   UserModel? _currentUser;
   AuthenticationStatus _status = AuthenticationStatus.unknown;
   StreamController<UserModel?>? _authStateController;
+  final FirestoreService _firestoreService = FirestoreService();
+  final InteractionTracker _tracker = InteractionTracker();
+  final LocalDatabaseService _localDatabase = LocalDatabaseService();
 
   @override
   UserModel? get currentUser => _currentUser;
@@ -38,6 +45,7 @@ class WebAuthService extends AuthServiceInterface {
   @override
   void initialize() {
     _authStateController = StreamController<UserModel?>.broadcast();
+    _tracker.initialize(this);
     _loadCurrentUser();
   }
 
@@ -197,18 +205,6 @@ class WebAuthService extends AuthServiceInterface {
       final userId = DateTime.now().millisecondsSinceEpoch.toString();
       final hashedPassword = _hashPassword(password);
 
-      final userData = {
-        'id': userId,
-        'email': email.toLowerCase(),
-        'name': name,
-        'passwordHash': hashedPassword,
-        'emailVerified': false, // For web, we'll simulate email verification
-        'createdAt': DateTime.now().toIso8601String(),
-        'photoUrl': null,
-      };
-
-      await _saveUser(email, userData);
-
       _currentUser = UserModel(
         id: userId,
         email: email.toLowerCase(),
@@ -218,8 +214,47 @@ class WebAuthService extends AuthServiceInterface {
         emailVerified: false,
       );
 
+      // Save to local persistent database
+      final savedToLocal = await _localDatabase.saveUser(_currentUser!, hashedPassword);
+      if (!savedToLocal) {
+        return AuthResult(
+          success: false,
+          errorMessage: 'فشل في حفظ بيانات المستخدم',
+        );
+      }
+
+      // Also save to session storage for immediate use
+      final userData = {
+        'id': userId,
+        'email': email.toLowerCase(),
+        'name': name,
+        'passwordHash': hashedPassword,
+        'emailVerified': false,
+        'createdAt': DateTime.now().toIso8601String(),
+        'photoUrl': null,
+      };
+      await _saveUser(email, userData);
+
       _status = AuthenticationStatus.emailNotVerified;
       await _saveCurrentUser(_currentUser!);
+
+      // Save user to Firestore (make it non-blocking)
+      try {
+        _firestoreService.saveUserToDatabase(_currentUser!).catchError((e) {
+          print('Firestore save failed (non-critical): $e');
+        });
+      } catch (e) {
+        print('Firestore not available (continuing without it): $e');
+      }
+
+      // Track registration (make it non-blocking)
+      try {
+        _tracker.trackRegistration('email').catchError((e) {
+          print('Tracking failed (non-critical): $e');
+        });
+      } catch (e) {
+        print('Tracking not available (continuing without it): $e');
+      }
 
       notifyListeners();
       _authStateController?.add(_currentUser);
@@ -247,41 +282,80 @@ class WebAuthService extends AuthServiceInterface {
       // Debug: print what we're looking for
       print('DEBUG: Signing in user with email: ${email.toLowerCase()}');
 
-      final userData = await _getStoredUser(email);
-      print('DEBUG: Found user data: ${userData != null}');
+      // First try to get from local persistent database
+      final hashedPassword = _hashPassword(password);
+      final localUserData = await _localDatabase.verifyUser(email, hashedPassword);
 
-      if (userData == null) {
-        print('DEBUG: User not found, returning error');
-        return AuthResult(
-          success: false,
-          errorMessage: 'المستخدم غير موجود',
+      if (localUserData != null) {
+        print('DEBUG: User found in local database');
+        // User found in local database, use that data
+        _currentUser = UserModel(
+          id: localUserData['id'] as String,
+          email: localUserData['email'] as String,
+          name: localUserData['name'] as String,
+          photoUrl: localUserData['photoUrl'] as String?,
+          createdAt: DateTime.parse(localUserData['createdAt'] as String),
+          emailVerified: localUserData['emailVerified'] as bool? ?? false,
+        );
+
+        // Update session storage
+        await _saveUser(email, localUserData);
+      } else {
+        // Fallback to session storage
+        final userData = await _getStoredUser(email);
+        print('DEBUG: Found user data in session: ${userData != null}');
+
+        if (userData == null) {
+          print('DEBUG: User not found, returning error');
+          return AuthResult(
+            success: false,
+            errorMessage: 'المستخدم غير موجود',
+          );
+        }
+
+        final storedPasswordHash = userData['passwordHash'] as String;
+        final inputPasswordHash = _hashPassword(password);
+
+        if (storedPasswordHash != inputPasswordHash) {
+          return AuthResult(
+            success: false,
+            errorMessage: 'كلمة المرور غير صحيحة',
+          );
+        }
+
+        _currentUser = UserModel(
+          id: userData['id'] as String,
+          email: userData['email'] as String,
+          name: userData['name'] as String,
+          photoUrl: userData['photoUrl'] as String?,
+          createdAt: DateTime.parse(userData['createdAt'] as String),
+          emailVerified: userData['emailVerified'] as bool? ?? false,
         );
       }
-
-      final storedPasswordHash = userData['passwordHash'] as String;
-      final inputPasswordHash = _hashPassword(password);
-
-      if (storedPasswordHash != inputPasswordHash) {
-        return AuthResult(
-          success: false,
-          errorMessage: 'كلمة المرور غير صحيحة',
-        );
-      }
-
-      _currentUser = UserModel(
-        id: userData['id'] as String,
-        email: userData['email'] as String,
-        name: userData['name'] as String,
-        photoUrl: userData['photoUrl'] as String?,
-        createdAt: DateTime.parse(userData['createdAt'] as String),
-        emailVerified: userData['emailVerified'] as bool? ?? false,
-      );
 
       _status = _currentUser!.emailVerified
           ? AuthenticationStatus.authenticated
           : AuthenticationStatus.emailNotVerified;
 
       await _saveCurrentUser(_currentUser!);
+
+      // Update last login in Firestore (make it non-blocking)
+      try {
+        _firestoreService.updateUserLastLogin(_currentUser!.id).catchError((e) {
+          print('Firestore update failed (non-critical): $e');
+        });
+      } catch (e) {
+        print('Firestore not available (continuing without it): $e');
+      }
+
+      // Track login (make it non-blocking)
+      try {
+        _tracker.trackLogin('email').catchError((e) {
+          print('Tracking failed (non-critical): $e');
+        });
+      } catch (e) {
+        print('Tracking not available (continuing without it): $e');
+      }
 
       notifyListeners();
       _authStateController?.add(_currentUser);
@@ -343,20 +417,24 @@ class WebAuthService extends AuthServiceInterface {
 
   Future<void> _verifyEmail() async {
     if (_currentUser != null) {
+      // Update in local database
+      await _localDatabase.updateUser(_currentUser!.email, {'emailVerified': true});
+
+      // Update in session storage
       final userData = await _getStoredUser(_currentUser!.email);
       if (userData != null) {
         userData['emailVerified'] = true;
         await _saveUser(_currentUser!.email, userData);
-
-        _currentUser = _currentUser!.copyWith(emailVerified: true);
-        _status = AuthenticationStatus.authenticated;
-
-        await _saveCurrentUser(_currentUser!);
-        notifyListeners();
-        _authStateController?.add(_currentUser);
-
-        print('DEBUG: Email verified successfully for ${_currentUser!.email}');
       }
+
+      _currentUser = _currentUser!.copyWith(emailVerified: true);
+      _status = AuthenticationStatus.authenticated;
+
+      await _saveCurrentUser(_currentUser!);
+      notifyListeners();
+      _authStateController?.add(_currentUser);
+
+      print('DEBUG: Email verified successfully for ${_currentUser!.email}');
     }
   }
 
@@ -487,6 +565,17 @@ class WebAuthService extends AuthServiceInterface {
   @override
   Future<void> signOut() async {
     try {
+      // Track logout before clearing user (make it non-blocking)
+      if (_currentUser != null) {
+        try {
+          _tracker.trackLogout().catchError((e) {
+            print('Tracking logout failed (non-critical): $e');
+          });
+        } catch (e) {
+          print('Tracking not available: $e');
+        }
+      }
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_currentUserKey);
       await prefs.remove(_sessionKey);
@@ -509,5 +598,53 @@ class WebAuthService extends AuthServiceInterface {
   void dispose() {
     _authStateController?.close();
     super.dispose();
+  }
+
+  Future<void> updateProfilePhoto(String photoUrl) async {
+    if (_currentUser == null) return;
+
+    print('DEBUG: WebAuthService.updateProfilePhoto called with photoUrl: ${photoUrl.substring(0, Math.min(100, photoUrl.length))}');
+
+    // Update current user with new photo
+    _currentUser = UserModel(
+      id: _currentUser!.id,
+      email: _currentUser!.email,
+      name: _currentUser!.name,
+      photoUrl: photoUrl,
+      emailVerified: _currentUser!.emailVerified,
+      createdAt: _currentUser!.createdAt,
+    );
+
+    print('DEBUG: Updated _currentUser.photoUrl to: ${_currentUser!.photoUrl?.substring(0, Math.min(100, _currentUser!.photoUrl?.length ?? 0))}');
+
+    // Save to session storage (this is the critical part)
+    await _saveCurrentUser(_currentUser!);
+
+    // IMPORTANT: Also update the stored user data in _usersKey
+    final userData = await _getStoredUser(_currentUser!.email);
+    if (userData != null) {
+      userData['photoUrl'] = photoUrl;
+      await _saveUser(_currentUser!.email, userData);
+      print('DEBUG: Updated stored user data with new photoUrl');
+    }
+
+    // Update in local database
+    await _localDatabase.updateUserPhoto(_currentUser!.email, photoUrl);
+    print('DEBUG: Updated local database with new photoUrl');
+
+    // Update Firestore (non-blocking)
+    try {
+      _firestoreService.updateUserPhotoUrl(_currentUser!.id, photoUrl).catchError((e) {
+        print('Firestore photo update failed (non-critical): $e');
+      });
+    } catch (e) {
+      print('Firestore not available: $e');
+    }
+
+    // Force UI update
+    notifyListeners();
+    _authStateController?.add(_currentUser);
+
+    print('DEBUG: WebAuthService.updateProfilePhoto completed - notified listeners');
   }
 }

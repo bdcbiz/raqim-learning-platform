@@ -159,7 +159,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       crossAxisCount: MediaQuery.of(context).size.width > 600
                           ? 3
                           : 2,
-                      childAspectRatio: 0.85,
+                      childAspectRatio: 1.05,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/course.dart';
 import '../services/mock_data_service.dart';
+import '../data/models/course_model.dart';
+import '../services/database/database_service.dart';
 
 class CourseProvider extends ChangeNotifier {
   List<Course> _allCourses = [];
   List<Course> _enrolledCourses = [];
   bool _isLoading = false;
   String? _error;
+  final DatabaseService _databaseService = DatabaseService();
 
   List<Course> get allCourses => _allCourses;
   List<Course> get enrolledCourses => _enrolledCourses;
@@ -19,8 +22,10 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      print('DEBUG: Starting to load courses...');
       final mockService = MockDataService();
       final response = await mockService.getCourses();
+      print('DEBUG: Response from mock service: ${response['success']}');
       if (response['success'] == true) {
         final coursesList = response['data'] ?? response['courses'] ?? [];
         _allCourses = coursesList.map<Course>((courseModel) => Course(
@@ -38,7 +43,7 @@ class CourseProvider extends ChangeNotifier {
           category: courseModel.category ?? '',
           level: courseModel.level ?? 'مبتدئ',
           price: courseModel.price ?? 0,
-          totalLessons: courseModel.modules?.fold<int>(0, (sum, module) => sum + (module.lessons?.length ?? 0)) ?? 0,
+          totalLessons: courseModel.modules?.fold<int>(0, (int sum, CourseModule module) => sum + (module.lessons.length)) ?? 0,
           totalStudents: courseModel.enrolledStudents ?? 0,
           rating: courseModel.rating ?? 4.5,
           numberOfRatings: courseModel.totalRatings ?? 0,
@@ -47,32 +52,39 @@ class CourseProvider extends ChangeNotifier {
           whatYouWillLearn: courseModel.objectives ?? [],
           requirements: courseModel.requirements ?? [],
         )).toList();
+        print('DEBUG: Loaded ${_allCourses.length} courses successfully');
       } else {
         _error = response['error'] ?? 'Failed to load courses';
+        print('DEBUG: Error in response: $_error');
       }
     } catch (e) {
       _error = e.toString();
+      print('DEBUG: Exception while loading courses: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> loadEnrolledCourses() async {
+  Future<void> loadEnrolledCourses(String userId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final mockService = MockDataService();
-      final response = await mockService.getEnrolledCourses();
-      if (response['success'] == true) {
-        _enrolledCourses = (response['courses'] as List)
-            .map((json) => Course.fromJson(json))
-            .toList();
-      } else {
-        _error = response['error'] ?? 'Failed to load enrolled courses';
+      // Get enrolled course IDs from database
+      List<String> enrolledCourseIds = await _databaseService.getUserEnrolledCourses(userId);
+
+      // Filter all courses to get enrolled ones
+      _enrolledCourses = _allCourses.where((course) => enrolledCourseIds.contains(course.id)).map((course) => course.copyWith(isEnrolled: true)).toList();
+
+      // Update isEnrolled flag in allCourses
+      for (int i = 0; i < _allCourses.length; i++) {
+        if (enrolledCourseIds.contains(_allCourses[i].id)) {
+          _allCourses[i] = _allCourses[i].copyWith(isEnrolled: true);
+        }
       }
+
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -81,11 +93,14 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> enrollInCourse(String courseId) async {
+  Future<bool> enrollInCourse(String courseId, String userId) async {
     try {
       final mockService = MockDataService();
       final response = await mockService.enrollInCourse(courseId);
       if (response['success'] == true) {
+        // Save enrollment to database
+        await _databaseService.enrollInCourse(userId, courseId);
+
         // Update the course in allCourses list
         final courseIndex = _allCourses.indexWhere((c) => c.id == courseId);
         if (courseIndex != -1) {
@@ -94,7 +109,7 @@ class CourseProvider extends ChangeNotifier {
             enrolledAt: DateTime.now().toIso8601String(),
           );
         }
-        
+
         // Add to enrolled courses if not already there
         if (!_enrolledCourses.any((c) => c.id == courseId)) {
           final enrolledCourse = _allCourses.firstWhere(
@@ -103,7 +118,16 @@ class CourseProvider extends ChangeNotifier {
           );
           _enrolledCourses.add(enrolledCourse);
         }
-        
+
+        // Track user interaction
+        await _databaseService.trackUserInteraction(
+          userId: userId,
+          action: 'enroll',
+          targetType: 'course',
+          targetId: courseId,
+          metadata: {'enrolled_at': DateTime.now().toIso8601String()},
+        );
+
         notifyListeners();
         return true;
       } else {

@@ -9,6 +9,10 @@ import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
 import '../../../widgets/common/modern_course_card.dart';
 import '../../../screens/courses_screen.dart';
+import '../../../services/tracking/interaction_tracker.dart';
+import '../../../widgets/common/advertisements_carousel.dart';
+import '../../../providers/course_provider.dart';
+import '../../../services/auth/auth_interface.dart';
 
 class ModernHomeScreen extends StatefulWidget {
   const ModernHomeScreen({super.key});
@@ -20,6 +24,8 @@ class ModernHomeScreen extends StatefulWidget {
 class _ModernHomeScreenState extends State<ModernHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'الكل';
+  String _searchQuery = '';
+  final InteractionTracker _tracker = InteractionTracker();
 
   final List<String> _categories = [
     'الكل',
@@ -37,7 +43,11 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Load courses from both providers
       context.read<CoursesProvider>().loadCourses();
+      context.read<CourseProvider>().loadCourses();
+      // Track home page view
+      _tracker.trackPageView('home');
     });
   }
 
@@ -49,9 +59,19 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Try to get user from WebAuthService first (for web)
+    final authService = Provider.of<AuthServiceInterface>(context);
+    final webUser = authService.currentUser;
+
+    // Fallback to AuthProvider
     final authProvider = Provider.of<AuthProvider>(context);
-    final user = authProvider.currentUser;
+    final authProviderUser = authProvider.currentUser;
+
+    // Use whichever has a user
+    final user = webUser ?? authProviderUser;
+
     final coursesProvider = Provider.of<CoursesProvider>(context);
+    final courseProvider = Provider.of<CourseProvider>(context);
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
@@ -76,20 +96,24 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                   controller: _searchController,
                   hintText: 'ماذا تود أن تتعلم اليوم؟',
                   onChanged: (value) {
-                    // Navigate to courses with search query when user starts typing
-                    if (value.trim().isNotEmpty) {
-                      context.go('/courses?search=${Uri.encodeComponent(value.trim())}');
+                    // Filter courses on the home screen as user types
+                    setState(() {
+                      _searchQuery = value.trim();
+                    });
+                    if (_searchQuery.isNotEmpty) {
+                      _tracker.trackSearch(_searchQuery);
                     }
-                  },
-                  onTap: () {
-                    // Navigate to all courses screen (dashboard subroute)
-                    context.go('/courses');
                   },
                 ),
               ),
               
               const SizedBox(height: 24),
-              
+
+              // Advertisements Carousel
+              const AdvertisementCarousel(),
+
+              const SizedBox(height: 24),
+
               // Category Pills
               SizedBox(
                 height: 40,
@@ -149,10 +173,10 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
               
               const SizedBox(height: 16),
               
-              // Course Grid
+              // Course Grid - Use CourseProvider for better data
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildCoursesGrid(coursesProvider.courses),
+                child: _buildCoursesGrid(courseProvider),
               ),
               
               const SizedBox(height: 100), // Space for bottom navigation
@@ -162,19 +186,52 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
     );
   }
 
-  Widget _buildCoursesGrid(List courses) {
-    // Filter courses based on selected category
-    final filteredCourses = _selectedCategory == 'الكل' 
-        ? courses 
-        : courses.where((course) => course.category == _selectedCategory).toList();
-    
-    if (filteredCourses.isEmpty && courses.isEmpty) {
-      // Show sample courses if no courses at all
+  Widget _buildCoursesGrid(CourseProvider provider) {
+    // Check if loading
+    if (provider.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Get all courses
+    final allCourses = provider.allCourses;
+
+    // Filter courses based on selected category and search query
+    var filteredCourses = _selectedCategory == 'الكل'
+        ? allCourses
+        : allCourses.where((course) {
+            // Check both category and categories fields
+            if (course.categories != null && course.categories!.isNotEmpty) {
+              return course.categories!.contains(_selectedCategory);
+            }
+            return course.category == _selectedCategory;
+          }).toList();
+
+    // Apply search filter if there's a search query
+    if (_searchQuery.isNotEmpty) {
+      filteredCourses = filteredCourses.where((course) {
+        final query = _searchQuery.toLowerCase();
+        // Get instructor name from Map if it exists
+        final instructorName = course.instructor != null && course.instructor is Map
+            ? ((course.instructor as Map)['name'] ?? '').toString()
+            : '';
+        return course.title.toLowerCase().contains(query) ||
+               course.description.toLowerCase().contains(query) ||
+               instructorName.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    // If no courses at all, show sample courses
+    if (allCourses.isEmpty) {
       return _buildSampleCoursesGrid();
     }
-    
+
+    // If filtered category has no courses
     if (filteredCourses.isEmpty) {
-      // Show empty state for filtered category
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -200,30 +257,37 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
       );
     }
 
+    // Show only first 6 courses as "popular" courses
+    final popularCourses = filteredCourses.take(6).toList();
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.68,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : 2,
+        crossAxisSpacing: MediaQuery.of(context).size.width > 900 ? 16 : 12,
+        mainAxisSpacing: MediaQuery.of(context).size.width > 900 ? 16 : 12,
+        childAspectRatio: MediaQuery.of(context).size.width > 900 ? 1.3 : 0.85,
       ),
-      itemCount: filteredCourses.length > 6 ? 6 : filteredCourses.length,
+      itemCount: popularCourses.length,
       itemBuilder: (context, index) {
-        final course = filteredCourses[index];
-        // Handle totalDuration which is a Duration object
-        final durationHours = course.totalDuration?.inHours ?? 8;
+        final course = popularCourses[index];
+        // Use same card design as all courses screen
         return ModernCourseCard(
           title: course.title,
-          instructor: course.instructorName ?? 'University of London',
-          imageUrl: course.thumbnailUrl,
+          instructor: course.instructorName ?? course.instructor?['name'] ?? 'مدرب معتمد',
+          imageUrl: course.thumbnail ?? 'https://picsum.photos/400/300?random=${course.id}',
           category: course.category ?? 'تعلم الآلة',
-          studentsCount: 500,
+          studentsCount: course.totalStudents ?? 500,
           price: course.price == 0 ? 'مجاني' : '${course.price} ريال',
           rating: course.rating ?? 4.5,
           categoryColor: ModernCourseCard.getCategoryColor(course.category ?? 'تعلم الآلة'),
-          onTap: () => context.go('/course/${course.id}'),
+          onTap: () {
+            // Track course click
+            _tracker.trackButtonClick('view_course', additionalData: {'courseId': course.id, 'from': 'home'});
+            // Navigate to course details
+            context.go('/course/${course.id}');
+          },
         );
       },
     );
@@ -356,11 +420,11 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.68,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : 2,
+        crossAxisSpacing: MediaQuery.of(context).size.width > 900 ? 16 : 12,
+        mainAxisSpacing: MediaQuery.of(context).size.width > 900 ? 16 : 12,
+        childAspectRatio: MediaQuery.of(context).size.width > 900 ? 1.3 : 0.85,
       ),
       itemCount: filteredSampleCourses.length > 6 ? 6 : filteredSampleCourses.length,
       itemBuilder: (context, index) {

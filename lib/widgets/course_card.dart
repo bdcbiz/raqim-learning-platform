@@ -227,7 +227,12 @@ class CourseCard extends StatelessWidget {
                             } else {
                               return ElevatedButton(
                                 onPressed: onEnroll ?? () async {
-                                  final success = await provider.enrollInCourse(course.id);
+                                  // Get current user ID - use a default for now
+                                  final userId = 'current_user';
+                                  final success = await provider.enrollInCourse(course.id, userId);
+
+                                  if (!context.mounted) return;
+
                                   if (success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(

@@ -33,12 +33,15 @@ class CoursesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      print('DEBUG CoursesProvider: Starting to load courses...');
       // Use mock data service for now
       final mockService = MockDataService();
       final response = await mockService.getCourses();
+      print('DEBUG CoursesProvider: Got response with keys: ${response.keys}');
 
       if (response['courses'] != null || response['data'] != null) {
         final coursesList = response['courses'] ?? response['data'] ?? [];
+        print('DEBUG CoursesProvider: Found ${coursesList.length} courses');
         _courses = coursesList as List<CourseModel>;
         _filteredCourses = _courses;
 
@@ -81,12 +84,16 @@ class CoursesProvider extends ChangeNotifier {
 
         // Cache the courses for consistency
         await CacheService.cacheCourses(_courses);
+        print('DEBUG CoursesProvider: Cached courses successfully');
+      } else {
+        print('DEBUG CoursesProvider: No courses found in response!');
+        _error = 'لا توجد دورات متاحة';
       }
 
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('Error loading courses: $e');
+      print('DEBUG CoursesProvider: Error loading courses: $e');
       _error = 'فشل تحميل الدورات';
       _isLoading = false;
       notifyListeners();
@@ -117,20 +124,29 @@ class CoursesProvider extends ChangeNotifier {
   }
 
   void filterCourses({String? level, String? category, String? searchQuery}) {
+    print('DEBUG filterCourses called - level: $level, category: $category, searchQuery: $searchQuery');
+    print('DEBUG Available courses levels: ${_courses.map((c) => c.level).toSet()}');
+
     _filteredCourses = _courses.where((course) {
       bool matchesLevel = level == null || level == 'الكل' || course.level == level;
       bool matchesCategory = category == null || category == 'الكل' || course.category == category;
-      bool matchesSearch = searchQuery == null || 
-          searchQuery.isEmpty || 
+      bool matchesSearch = searchQuery == null ||
+          searchQuery.isEmpty ||
           course.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
           course.description.toLowerCase().contains(searchQuery.toLowerCase());
-      
+
+      if (level != null && level != 'الكل') {
+        print('DEBUG Checking course ${course.title} with level ${course.level} against filter $level: $matchesLevel');
+      }
+
       return matchesLevel && matchesCategory && matchesSearch;
     }).toList();
-    
+
+    print('DEBUG Filtered courses count: ${_filteredCourses.length}');
+
     if (level != null) _selectedLevel = level;
     if (category != null) _selectedCategory = category;
-    
+
     notifyListeners();
   }
 
