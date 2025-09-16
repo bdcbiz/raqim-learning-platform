@@ -10,6 +10,7 @@ class NewsProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String _selectedCategory = 'الكل';
+  String? _selectedNewsId; // المتغير الجديد لتتبع الخبر المحدد
   final DatabaseService _databaseService = DatabaseService();
 
   List<NewsModel> get news {
@@ -22,6 +23,17 @@ class NewsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get selectedCategory => _selectedCategory;
+  String? get selectedNewsId => _selectedNewsId;
+
+  // الحصول على الخبر المحدد
+  NewsModel? get selectedNews {
+    if (_selectedNewsId == null) return null;
+    try {
+      return _news.firstWhere((news) => news.id == _selectedNewsId);
+    } catch (e) {
+      return null;
+    }
+  }
 
   NewsProvider() {
     loadNews();
@@ -61,6 +73,12 @@ class NewsProvider extends ChangeNotifier {
 
   void setCategory(String category) {
     _selectedCategory = category;
+    notifyListeners();
+  }
+
+  // تحديد الخبر المحدد
+  void selectNews(String? newsId) {
+    _selectedNewsId = newsId;
     notifyListeners();
   }
 
