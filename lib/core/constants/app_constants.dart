@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'رقيم';
+  static const String appName = '';
   static const String appNameEnglish = 'Raqim';
   
   static const Duration animationDuration = Duration(milliseconds: 300);

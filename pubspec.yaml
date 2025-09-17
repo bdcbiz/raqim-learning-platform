@@ -37,6 +37,9 @@ dependencies:
   
   # State Management
   provider: ^6.1.1
+
+  # Charts
+  fl_chart: ^0.66.0
   
   # Navigation
   go_router: ^13.0.0
@@ -44,14 +47,15 @@ dependencies:
   # Network & API
   http: ^1.5.0
   dio: ^5.4.0
+
   
   # Cryptography
   crypto: ^3.0.3
 
-  # Firebase (Complete Firebase Suite)
-  firebase_core: ^2.24.2
-  firebase_analytics: ^10.8.0
-  cloud_firestore: ^4.13.6
+  # Firebase (Complete Firebase Suite) - Temporarily disabled due to web compatibility issues
+  # firebase_core: ^2.24.2
+  # firebase_analytics: ^10.8.0
+  # cloud_firestore: ^4.13.6
   # firebase_auth: ^4.15.3
   # firebase_storage: ^11.5.6
 

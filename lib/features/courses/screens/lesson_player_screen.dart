@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 
 class LessonPlayerScreen extends StatelessWidget {
   final String courseId;
@@ -13,8 +14,8 @@ class LessonPlayerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('مشغل الدرس'),
+      appBar: RaqimAppBar(
+        title: 'مشغل الدرس',
       ),
       body: const Center(
         child: Text('مشغل الفيديو سيكون هنا'),

@@ -110,7 +110,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
                 borderRadius: BorderRadius.circular(4),
                 color: _currentPage == index
                     ? AppColors.primaryColor
-                    : AppColors.primaryColor.withOpacity(0.3),
+                    : AppColors.primaryColor.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -131,7 +131,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
         ),
         boxShadow: [
           BoxShadow(
-            color: (ad['gradient'][0] as Color).withOpacity(0.3),
+            color: (ad['gradient'][0] as Color).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -150,7 +150,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -162,7 +162,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -190,7 +190,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -220,7 +220,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
                 Text(
                   ad['subtitle'],
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 12,
                   ),
                   maxLines: 2,

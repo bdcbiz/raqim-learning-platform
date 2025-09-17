@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/responsive_auth_layout.dart';
 import '../../../core/theme/app_theme.dart';
@@ -114,38 +113,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
-  void _skipVerificationAndEnter() async {
-    // Manually verify the user and go to home
-    final authService = AuthServiceFactory.createAuthService();
-
-    setState(() {
-      _message = 'جارٍ تسجيل الدخول...';
-      _isSuccess = true;
-    });
-
-    // Force immediate verification
-    if (authService.currentUser != null) {
-      // Cast to WebAuthService to access forceEmailVerification
-      final webAuthService = authService as dynamic;
-      if (webAuthService.forceEmailVerification != null) {
-        await webAuthService.forceEmailVerification();
-      }
-
-      if (mounted) {
-        setState(() {
-          _message = 'تم تسجيل الدخول بنجاح!';
-        });
-
-        // Navigate to home immediately
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            context.go('/');
-          }
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -186,35 +153,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   'تحقق من صندوق الوارد أو مجلد الرسائل غير المرغوبة وانقر على رابط التحقق',
                   style: AppTextStyles.body,
                   textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.amber[700],
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'يمكنك تخطي التحقق والدخول مباشرة للتطبيق',
-                          style: TextStyle(
-                            color: Colors.amber[800],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),
@@ -314,42 +252,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         color: AppColors.primaryColor,
                       ),
                     ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Skip verification button
-          SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _skipVerificationAndEnter,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[600],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.skip_next,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    localizations?.translate('skipAndEnter') ?? 'تخطي والدخول مباشرة',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
 

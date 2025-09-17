@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/app_settings_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,10 +15,8 @@ class SettingsScreen extends StatelessWidget {
     // Light mode only - dark mode removed as per requirements
     
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations?.translate('settings') ?? 'الإعدادات'),
-        centerTitle: true,
-        elevation: 0,
+      appBar: RaqimAppBar(
+        title: localizations?.translate('settings') ?? 'الإعدادات',
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -82,15 +81,15 @@ class SettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primaryColor.withOpacity(0.1),
-                      AppColors.primaryColor.withOpacity(0.1),
+                      AppColors.primaryColor.withValues(alpha: 0.1),
+                      AppColors.primaryColor.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.primaryColor.withOpacity(0.3),
+                    color: AppColors.primaryColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Column(

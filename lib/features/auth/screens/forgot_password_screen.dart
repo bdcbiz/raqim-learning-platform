@@ -73,8 +73,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primaryColor.withOpacity(0.1),
-                          AppColors.primaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withValues(alpha: 0.1),
+                          AppColors.primaryColor.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -271,7 +271,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor.withValues(alpha: 0.8),
                     AppColors.primaryColor,
                   ],
                 ),
@@ -286,7 +286,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       height: 150,
                       width: 150,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
@@ -334,7 +334,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: isWideScreen ? 18 : 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),

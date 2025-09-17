@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 import '../providers/payment_provider.dart';
 
 class CreditCardPaymentScreen extends StatefulWidget {
@@ -73,15 +74,8 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
-      appBar: AppBar(
-        title: const Text('الدفع بالبطاقة الائتمانية'),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
+      appBar: RaqimAppBar(
+        title: 'الدفع بالبطاقة الائتمانية',
       ),
       body: Column(
         children: [
@@ -120,7 +114,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                             gradient: LinearGradient(
                               colors: [
                                 AppColors.primaryColor,
-                                AppColors.primaryColor.withOpacity(0.8),
+                                AppColors.primaryColor.withValues(alpha: 0.8),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -128,7 +122,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primaryColor.withOpacity(0.3),
+                                color: AppColors.primaryColor.withValues(alpha: 0.3),
                                 spreadRadius: 2,
                                 blurRadius: 10,
                               ),
@@ -190,7 +184,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                                       Text(
                                         'حامل البطاقة',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(alpha: 0.7),
                                           fontSize: 12,
                                         ),
                                       ),
@@ -210,7 +204,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
                                       Text(
                                         'تاريخ الانتهاء',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(alpha: 0.7),
                                           fontSize: 12,
                                         ),
                                       ),
@@ -435,7 +429,7 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: const Offset(0, -2),

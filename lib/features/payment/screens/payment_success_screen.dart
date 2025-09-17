@@ -75,8 +75,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primaryColor.withOpacity(0.1),
-              AppColors.primaryColor.withOpacity(0.1),
+              AppColors.primaryColor.withValues(alpha: 0.1),
+              AppColors.primaryColor.withValues(alpha: 0.1),
             ],
           ),
         ),
@@ -117,7 +117,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(0.3),
+                                  color: Colors.green.withValues(alpha: 0.3),
                                   spreadRadius: 5,
                                   blurRadius: 20,
                                 ),
@@ -165,7 +165,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
+                                    color: Colors.grey.withValues(alpha: 0.1),
                                     spreadRadius: 2,
                                     blurRadius: 10,
                                   ),

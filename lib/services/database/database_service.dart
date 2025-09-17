@@ -1,15 +1,22 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// Temporarily using local storage instead of Firestore due to Firebase configuration issues
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/models/post_model.dart';
 import '../../data/models/news_model.dart';
-import '../../data/models/course_model.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Local storage keys
+  static const String _usersKey = 'db_users';
+  static const String _postsKey = 'db_posts';
+  static const String _newsKey = 'db_news';
+  static const String _commentsKey = 'db_comments';
+  static const String _enrollmentsKey = 'db_enrollments';
+  static const String _interactionsKey = 'db_interactions';
 
   // Collections
   String get usersCollection => 'users';
@@ -23,19 +30,25 @@ class DatabaseService {
   // User Management
   Future<void> createUser(UserModel user) async {
     try {
-      await _firestore.collection(usersCollection).doc(user.id).set({
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      users[user.id] = {
         'id': user.id,
         'name': user.name,
         'email': user.email,
         'photoURL': user.photoUrl,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': user.createdAt.toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
         'emailVerified': user.emailVerified ?? false,
         'enrolledCourses': [],
         'completedCourses': [],
         'favoritesCourses': [],
         'preferences': {},
-      });
+      };
+
+      await prefs.setString(_usersKey, jsonEncode(users));
       print('DEBUG DatabaseService: User created successfully: ${user.email}');
     } catch (e) {
       print('ERROR DatabaseService: Failed to create user: $e');
@@ -45,10 +58,12 @@ class DatabaseService {
 
   Future<UserModel?> getUser(String userId) async {
     try {
-      DocumentSnapshot doc = await _firestore.collection(usersCollection).doc(userId).get();
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
 
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (users.containsKey(userId)) {
+        final data = users[userId];
         return UserModel(
           id: data['id'],
           name: data['name'],
@@ -56,7 +71,7 @@ class DatabaseService {
           photoUrl: data['photoURL'],
           emailVerified: data['emailVerified'] ?? false,
           createdAt: data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
+              ? DateTime.parse(data['createdAt'])
               : DateTime.now(),
         );
       }
@@ -69,9 +84,15 @@ class DatabaseService {
 
   Future<void> updateUser(String userId, Map<String, dynamic> updates) async {
     try {
-      updates['updatedAt'] = FieldValue.serverTimestamp();
-      await _firestore.collection(usersCollection).doc(userId).update(updates);
-      print('DEBUG DatabaseService: User updated successfully');
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      if (users.containsKey(userId)) {
+        users[userId] = {...users[userId], ...updates, 'updatedAt': DateTime.now().toIso8601String()};
+        await prefs.setString(_usersKey, jsonEncode(users));
+        print('DEBUG DatabaseService: User updated successfully');
+      }
     } catch (e) {
       print('ERROR DatabaseService: Failed to update user: $e');
       throw Exception('Failed to update user: $e');
@@ -87,21 +108,26 @@ class DatabaseService {
     required String targetType, // 'post' or 'news'
   }) async {
     try {
-      DocumentReference commentRef = await _firestore.collection(commentsCollection).add({
-        'id': '',
+      final prefs = await SharedPreferences.getInstance();
+      final commentsJson = prefs.getString(_commentsKey) ?? '[]';
+      final comments = List<Map<String, dynamic>>.from(jsonDecode(commentsJson));
+
+      String commentId = 'comment_${DateTime.now().millisecondsSinceEpoch}';
+
+      comments.add({
+        'id': commentId,
         'userId': userId,
         'userName': userName,
         'content': content,
         'targetId': targetId,
         'targetType': targetType,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
         'likes': 0,
         'likedBy': [],
       });
 
-      // Update the comment with its generated ID
-      await commentRef.update({'id': commentRef.id});
+      await prefs.setString(_commentsKey, jsonEncode(comments));
 
       // Update target document comment count
       if (targetType == 'post') {
@@ -111,7 +137,7 @@ class DatabaseService {
       }
 
       print('DEBUG DatabaseService: Comment added successfully');
-      return commentRef.id;
+      return commentId;
     } catch (e) {
       print('ERROR DatabaseService: Failed to add comment: $e');
       throw Exception('Failed to add comment: $e');
@@ -120,25 +146,14 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getComments(String targetId, String targetType) async {
     try {
-      QuerySnapshot snapshot = await _firestore
-          .collection(commentsCollection)
-          .where('targetId', isEqualTo: targetId)
-          .where('targetType', isEqualTo: targetType)
-          .orderBy('createdAt', descending: true)
-          .get();
+      final prefs = await SharedPreferences.getInstance();
+      final commentsJson = prefs.getString(_commentsKey) ?? '[]';
+      final allComments = List<Map<String, dynamic>>.from(jsonDecode(commentsJson));
 
-      return snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return {
-          'id': doc.id,
-          'userId': data['userId'],
-          'userName': data['userName'],
-          'content': data['content'],
-          'createdAt': data['createdAt'],
-          'likes': data['likes'] ?? 0,
-          'likedBy': List<String>.from(data['likedBy'] ?? []),
-        };
-      }).toList();
+      return allComments
+          .where((comment) => comment['targetId'] == targetId && comment['targetType'] == targetType)
+          .toList()
+          ..sort((a, b) => DateTime.parse(b['createdAt']).compareTo(DateTime.parse(a['createdAt'])));
     } catch (e) {
       print('ERROR DatabaseService: Failed to get comments: $e');
       return [];
@@ -154,8 +169,14 @@ class DatabaseService {
     required List<String> tags,
   }) async {
     try {
-      DocumentReference postRef = await _firestore.collection(postsCollection).add({
-        'id': '',
+      final prefs = await SharedPreferences.getInstance();
+      final postsJson = prefs.getString(_postsKey) ?? '[]';
+      final posts = List<Map<String, dynamic>>.from(jsonDecode(postsJson));
+
+      String postId = 'post_${DateTime.now().millisecondsSinceEpoch}';
+
+      posts.add({
+        'id': postId,
         'userId': userId,
         'userName': userName,
         'userPhotoUrl': '',
@@ -167,14 +188,13 @@ class DatabaseService {
         'upvotedBy': [],
         'downvotedBy': [],
         'commentsCount': 0,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
       });
 
-      await postRef.update({'id': postRef.id});
-
+      await prefs.setString(_postsKey, jsonEncode(posts));
       print('DEBUG DatabaseService: Post created successfully');
-      return postRef.id;
+      return postId;
     } catch (e) {
       print('ERROR DatabaseService: Failed to create post: $e');
       throw Exception('Failed to create post: $e');
@@ -183,27 +203,20 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getPosts([String sortBy = 'recent']) async {
     try {
-      Query query = _firestore.collection(postsCollection);
+      final prefs = await SharedPreferences.getInstance();
+      final postsJson = prefs.getString(_postsKey) ?? '[]';
+      final posts = List<Map<String, dynamic>>.from(jsonDecode(postsJson));
 
-      if (sortBy == 'popular') {
-        // For popular, we'll sort by net votes (upvotes - downvotes)
-        query = query.orderBy('createdAt', descending: true);
-      } else {
-        query = query.orderBy('createdAt', descending: true);
+      // Add net votes calculation
+      for (var post in posts) {
+        post['netVotes'] = (post['upvotes'] ?? 0) - (post['downvotes'] ?? 0);
       }
 
-      QuerySnapshot snapshot = await query.get();
-
-      List<Map<String, dynamic>> posts = snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        data['netVotes'] = (data['upvotes'] ?? 0) - (data['downvotes'] ?? 0);
-        return data;
-      }).toList();
-
-      // Sort by popularity if needed (since Firestore can't sort by calculated field)
+      // Sort based on sortBy parameter
       if (sortBy == 'popular') {
         posts.sort((a, b) => b['netVotes'].compareTo(a['netVotes']));
+      } else {
+        posts.sort((a, b) => DateTime.parse(b['createdAt']).compareTo(DateTime.parse(a['createdAt'])));
       }
 
       return posts;
@@ -215,18 +228,16 @@ class DatabaseService {
 
   Future<void> votePost(String postId, String userId, bool isUpvote) async {
     try {
-      DocumentReference postRef = _firestore.collection(postsCollection).doc(postId);
+      final prefs = await SharedPreferences.getInstance();
+      final postsJson = prefs.getString(_postsKey) ?? '[]';
+      final posts = List<Map<String, dynamic>>.from(jsonDecode(postsJson));
 
-      await _firestore.runTransaction((transaction) async {
-        DocumentSnapshot snapshot = await transaction.get(postRef);
+      final postIndex = posts.indexWhere((p) => p['id'] == postId);
 
-        if (!snapshot.exists) {
-          throw Exception('Post not found');
-        }
-
-        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-        List<String> upvotedBy = List<String>.from(data['upvotedBy'] ?? []);
-        List<String> downvotedBy = List<String>.from(data['downvotedBy'] ?? []);
+      if (postIndex != -1) {
+        final post = posts[postIndex];
+        List<String> upvotedBy = List<String>.from(post['upvotedBy'] ?? []);
+        List<String> downvotedBy = List<String>.from(post['downvotedBy'] ?? []);
 
         if (isUpvote) {
           if (upvotedBy.contains(userId)) {
@@ -244,16 +255,16 @@ class DatabaseService {
           }
         }
 
-        transaction.update(postRef, {
-          'upvotes': upvotedBy.length,
-          'downvotes': downvotedBy.length,
-          'upvotedBy': upvotedBy,
-          'downvotedBy': downvotedBy,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      });
+        post['upvotes'] = upvotedBy.length;
+        post['downvotes'] = downvotedBy.length;
+        post['upvotedBy'] = upvotedBy;
+        post['downvotedBy'] = downvotedBy;
+        post['updatedAt'] = DateTime.now().toIso8601String();
 
-      print('DEBUG DatabaseService: Post vote updated successfully');
+        posts[postIndex] = post;
+        await prefs.setString(_postsKey, jsonEncode(posts));
+        print('DEBUG DatabaseService: Post vote updated successfully');
+      }
     } catch (e) {
       print('ERROR DatabaseService: Failed to vote post: $e');
       throw Exception('Failed to vote post: $e');
@@ -263,30 +274,30 @@ class DatabaseService {
   // News Management
   Future<void> likeNews(String newsId, String userId) async {
     try {
-      DocumentReference newsRef = _firestore.collection(newsCollection).doc(newsId);
+      final prefs = await SharedPreferences.getInstance();
+      final newsJson = prefs.getString(_newsKey) ?? '[]';
+      final newsList = List<Map<String, dynamic>>.from(jsonDecode(newsJson));
 
-      await _firestore.runTransaction((transaction) async {
-        DocumentSnapshot snapshot = await transaction.get(newsRef);
+      final newsIndex = newsList.indexWhere((n) => n['id'] == newsId);
 
-        if (snapshot.exists) {
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          List<String> likedBy = List<String>.from(data['likedBy'] ?? []);
+      if (newsIndex != -1) {
+        final news = newsList[newsIndex];
+        List<String> likedBy = List<String>.from(news['likedBy'] ?? []);
 
-          if (likedBy.contains(userId)) {
-            likedBy.remove(userId);
-          } else {
-            likedBy.add(userId);
-          }
-
-          transaction.update(newsRef, {
-            'likesCount': likedBy.length,
-            'likedBy': likedBy,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+        if (likedBy.contains(userId)) {
+          likedBy.remove(userId);
+        } else {
+          likedBy.add(userId);
         }
-      });
 
-      print('DEBUG DatabaseService: News like updated successfully');
+        news['likesCount'] = likedBy.length;
+        news['likedBy'] = likedBy;
+        news['updatedAt'] = DateTime.now().toIso8601String();
+
+        newsList[newsIndex] = news;
+        await prefs.setString(_newsKey, jsonEncode(newsList));
+        print('DEBUG DatabaseService: News like updated successfully');
+      }
     } catch (e) {
       print('ERROR DatabaseService: Failed to like news: $e');
       throw Exception('Failed to like news: $e');
@@ -296,20 +307,36 @@ class DatabaseService {
   // Course Management
   Future<void> enrollInCourse(String userId, String courseId) async {
     try {
-      await _firestore.collection(enrollmentsCollection).add({
+      final prefs = await SharedPreferences.getInstance();
+
+      // Update enrollments
+      final enrollmentsJson = prefs.getString(_enrollmentsKey) ?? '[]';
+      final enrollments = List<Map<String, dynamic>>.from(jsonDecode(enrollmentsJson));
+
+      enrollments.add({
         'userId': userId,
         'courseId': courseId,
-        'enrolledAt': FieldValue.serverTimestamp(),
+        'enrolledAt': DateTime.now().toIso8601String(),
         'progress': 0.0,
         'completed': false,
-        'lastAccessedAt': FieldValue.serverTimestamp(),
+        'lastAccessedAt': DateTime.now().toIso8601String(),
       });
 
+      await prefs.setString(_enrollmentsKey, jsonEncode(enrollments));
+
       // Update user's enrolled courses
-      await _firestore.collection(usersCollection).doc(userId).update({
-        'enrolledCourses': FieldValue.arrayUnion([courseId]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      if (users.containsKey(userId)) {
+        List<String> enrolledCourses = List<String>.from(users[userId]['enrolledCourses'] ?? []);
+        if (!enrolledCourses.contains(courseId)) {
+          enrolledCourses.add(courseId);
+          users[userId]['enrolledCourses'] = enrolledCourses;
+          users[userId]['updatedAt'] = DateTime.now().toIso8601String();
+          await prefs.setString(_usersKey, jsonEncode(users));
+        }
+      }
 
       print('DEBUG DatabaseService: Course enrollment successful');
     } catch (e) {
@@ -320,11 +347,12 @@ class DatabaseService {
 
   Future<List<String>> getUserEnrolledCourses(String userId) async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection(usersCollection).doc(userId).get();
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
 
-      if (userDoc.exists) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        return List<String>.from(data['enrolledCourses'] ?? []);
+      if (users.containsKey(userId)) {
+        return List<String>.from(users[userId]['enrolledCourses'] ?? []);
       }
       return [];
     } catch (e) {
@@ -335,32 +363,40 @@ class DatabaseService {
 
   Future<void> updateCourseProgress(String userId, String courseId, double progress) async {
     try {
-      QuerySnapshot enrollmentSnapshot = await _firestore
-          .collection(enrollmentsCollection)
-          .where('userId', isEqualTo: userId)
-          .where('courseId', isEqualTo: courseId)
-          .get();
+      final prefs = await SharedPreferences.getInstance();
+      final enrollmentsJson = prefs.getString(_enrollmentsKey) ?? '[]';
+      final enrollments = List<Map<String, dynamic>>.from(jsonDecode(enrollmentsJson));
 
-      if (enrollmentSnapshot.docs.isNotEmpty) {
-        String enrollmentId = enrollmentSnapshot.docs.first.id;
+      final enrollmentIndex = enrollments.indexWhere((e) =>
+        e['userId'] == userId && e['courseId'] == courseId
+      );
 
-        await _firestore.collection(enrollmentsCollection).doc(enrollmentId).update({
-          'progress': progress,
-          'completed': progress >= 1.0,
-          'lastAccessedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+      if (enrollmentIndex != -1) {
+        enrollments[enrollmentIndex]['progress'] = progress;
+        enrollments[enrollmentIndex]['completed'] = progress >= 1.0;
+        enrollments[enrollmentIndex]['lastAccessedAt'] = DateTime.now().toIso8601String();
+        enrollments[enrollmentIndex]['updatedAt'] = DateTime.now().toIso8601String();
+
+        await prefs.setString(_enrollmentsKey, jsonEncode(enrollments));
 
         // If completed, add to user's completed courses
         if (progress >= 1.0) {
-          await _firestore.collection(usersCollection).doc(userId).update({
-            'completedCourses': FieldValue.arrayUnion([courseId]),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        }
-      }
+          final usersJson = prefs.getString(_usersKey) ?? '{}';
+          final users = Map<String, dynamic>.from(jsonDecode(usersJson));
 
-      print('DEBUG DatabaseService: Course progress updated successfully');
+          if (users.containsKey(userId)) {
+            List<String> completedCourses = List<String>.from(users[userId]['completedCourses'] ?? []);
+            if (!completedCourses.contains(courseId)) {
+              completedCourses.add(courseId);
+              users[userId]['completedCourses'] = completedCourses;
+              users[userId]['updatedAt'] = DateTime.now().toIso8601String();
+              await prefs.setString(_usersKey, jsonEncode(users));
+            }
+          }
+        }
+
+        print('DEBUG DatabaseService: Course progress updated successfully');
+      }
     } catch (e) {
       print('ERROR DatabaseService: Failed to update course progress: $e');
       throw Exception('Failed to update course progress: $e');
@@ -370,10 +406,16 @@ class DatabaseService {
   // Helper Methods
   Future<void> _updatePostCommentCount(String postId, int increment) async {
     try {
-      await _firestore.collection(postsCollection).doc(postId).update({
-        'commentsCount': FieldValue.increment(increment),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final postsJson = prefs.getString(_postsKey) ?? '[]';
+      final posts = List<Map<String, dynamic>>.from(jsonDecode(postsJson));
+
+      final postIndex = posts.indexWhere((p) => p['id'] == postId);
+      if (postIndex != -1) {
+        posts[postIndex]['commentsCount'] = (posts[postIndex]['commentsCount'] ?? 0) + increment;
+        posts[postIndex]['updatedAt'] = DateTime.now().toIso8601String();
+        await prefs.setString(_postsKey, jsonEncode(posts));
+      }
     } catch (e) {
       print('ERROR DatabaseService: Failed to update post comment count: $e');
     }
@@ -381,10 +423,16 @@ class DatabaseService {
 
   Future<void> _updateNewsCommentCount(String newsId, int increment) async {
     try {
-      await _firestore.collection(newsCollection).doc(newsId).update({
-        'commentsCount': FieldValue.increment(increment),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final newsJson = prefs.getString(_newsKey) ?? '[]';
+      final newsList = List<Map<String, dynamic>>.from(jsonDecode(newsJson));
+
+      final newsIndex = newsList.indexWhere((n) => n['id'] == newsId);
+      if (newsIndex != -1) {
+        newsList[newsIndex]['commentsCount'] = (newsList[newsIndex]['commentsCount'] ?? 0) + increment;
+        newsList[newsIndex]['updatedAt'] = DateTime.now().toIso8601String();
+        await prefs.setString(_newsKey, jsonEncode(newsList));
+      }
     } catch (e) {
       print('ERROR DatabaseService: Failed to update news comment count: $e');
     }
@@ -399,15 +447,20 @@ class DatabaseService {
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      await _firestore.collection(interactionsCollection).add({
+      final prefs = await SharedPreferences.getInstance();
+      final interactionsJson = prefs.getString(_interactionsKey) ?? '[]';
+      final interactions = List<Map<String, dynamic>>.from(jsonDecode(interactionsJson));
+
+      interactions.add({
         'userId': userId,
         'action': action, // 'view', 'like', 'comment', 'enroll', 'complete', etc.
         'targetType': targetType, // 'course', 'news', 'post'
         'targetId': targetId,
         'metadata': metadata ?? {},
-        'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': DateTime.now().toIso8601String(),
       });
 
+      await prefs.setString(_interactionsKey, jsonEncode(interactions));
       print('DEBUG DatabaseService: User interaction tracked: $action on $targetType');
     } catch (e) {
       print('ERROR DatabaseService: Failed to track interaction: $e');
@@ -417,18 +470,18 @@ class DatabaseService {
   // Batch operations for better performance
   Future<void> batchCreateComments(List<Map<String, dynamic>> commentsData) async {
     try {
-      WriteBatch batch = _firestore.batch();
+      final prefs = await SharedPreferences.getInstance();
+      final commentsJson = prefs.getString(_commentsKey) ?? '[]';
+      final comments = List<Map<String, dynamic>>.from(jsonDecode(commentsJson));
 
       for (Map<String, dynamic> commentData in commentsData) {
-        DocumentReference commentRef = _firestore.collection(commentsCollection).doc();
-        commentData['id'] = commentRef.id;
-        commentData['createdAt'] = FieldValue.serverTimestamp();
-        commentData['updatedAt'] = FieldValue.serverTimestamp();
-
-        batch.set(commentRef, commentData);
+        commentData['id'] = 'comment_${DateTime.now().millisecondsSinceEpoch}_${commentsData.indexOf(commentData)}';
+        commentData['createdAt'] = DateTime.now().toIso8601String();
+        commentData['updatedAt'] = DateTime.now().toIso8601String();
+        comments.add(commentData);
       }
 
-      await batch.commit();
+      await prefs.setString(_commentsKey, jsonEncode(comments));
       print('DEBUG DatabaseService: Batch comments created successfully');
     } catch (e) {
       print('ERROR DatabaseService: Failed to batch create comments: $e');
@@ -439,21 +492,19 @@ class DatabaseService {
   // Clean up old data (optional maintenance)
   Future<void> cleanupOldInteractions([int daysToKeep = 90]) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final interactionsJson = prefs.getString(_interactionsKey) ?? '[]';
+      final interactions = List<Map<String, dynamic>>.from(jsonDecode(interactionsJson));
+
       DateTime cutoffDate = DateTime.now().subtract(Duration(days: daysToKeep));
 
-      QuerySnapshot oldInteractions = await _firestore
-          .collection(interactionsCollection)
-          .where('timestamp', isLessThan: Timestamp.fromDate(cutoffDate))
-          .get();
+      final filteredInteractions = interactions.where((interaction) {
+        DateTime timestamp = DateTime.parse(interaction['timestamp']);
+        return timestamp.isAfter(cutoffDate);
+      }).toList();
 
-      WriteBatch batch = _firestore.batch();
-
-      for (QueryDocumentSnapshot doc in oldInteractions.docs) {
-        batch.delete(doc.reference);
-      }
-
-      await batch.commit();
-      print('DEBUG DatabaseService: Cleaned up ${oldInteractions.docs.length} old interactions');
+      await prefs.setString(_interactionsKey, jsonEncode(filteredInteractions));
+      print('DEBUG DatabaseService: Cleaned up ${interactions.length - filteredInteractions.length} old interactions');
     } catch (e) {
       print('ERROR DatabaseService: Failed to cleanup old interactions: $e');
     }

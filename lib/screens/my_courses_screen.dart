@@ -4,6 +4,8 @@ import '../providers/course_provider.dart';
 import '../models/course.dart';
 import '../widgets/course_card.dart';
 import 'course_detail_screen.dart';
+import '../features/auth/providers/auth_provider.dart';
+import '../core/widgets/raqim_app_bar.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
@@ -17,7 +19,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      context.read<CourseProvider>().loadEnrolledCourses();
+      final authProvider = context.read<AuthProvider>();
+      final userId = authProvider.currentUser?.id ?? 'guest_user';
+      context.read<CourseProvider>().loadEnrolledCourses(userId);
     });
   }
 
@@ -25,12 +29,8 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('دوراتي'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+      appBar: const RaqimAppBar(
+        title: 'دوراتي',
       ),
       body: Consumer<CourseProvider>(
         builder: (context, courseProvider, child) {
@@ -58,7 +58,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {
-                      courseProvider.loadEnrolledCourses();
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                      final userId = authProvider.currentUser?.id ?? 'guest_user';
+                      courseProvider.loadEnrolledCourses(userId);
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('إعادة المحاولة'),
@@ -110,7 +112,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => courseProvider.loadEnrolledCourses(),
+            onRefresh: () {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final userId = authProvider.currentUser?.id ?? 'guest_user';
+              return courseProvider.loadEnrolledCourses(userId);
+            },
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
@@ -135,7 +141,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                               decoration: BoxDecoration(
                                 color: Theme.of(
                                   context,
-                                ).primaryColor.withOpacity(0.1),
+                                ).primaryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -220,7 +226,7 @@ class EnrolledCourseCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: Container(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       child: const Icon(
                         Icons.play_circle_outline,
                         size: 48,

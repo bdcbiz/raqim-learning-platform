@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
+import '../core/widgets/raqim_app_bar.dart';
 import '../widgets/common/modern_button.dart';
 import '../widgets/common/modern_card.dart';
 import '../services/analytics/analytics_service_factory.dart';
+import '../providers/course_provider.dart';
+import '../models/course.dart';
+import '../features/auth/providers/auth_provider.dart';
 
 class SimpleCourseDetailScreen extends StatefulWidget {
   final String courseId;
@@ -15,448 +20,645 @@ class SimpleCourseDetailScreen extends StatefulWidget {
 }
 
 class _SimpleCourseDetailScreenState extends State<SimpleCourseDetailScreen> {
+  Course? _course;
+  bool _isLoading = true;
 
-  Map<String, dynamic> _getCourseData() {
-    // Sample courses data matching the home screen
-    final courses = {
-      'sample-ml-101': {
-        'title': 'مقدمة في تعلم الآلة',
-        'instructor': 'د. أحمد الرشيد',
-        'image': 'https://placehold.co/400x300/3B82F6/FFFFFF?text=ML+Course',
-        'lessons': 15,
-        'duration': '8 ساعة',
-        'price': '299 ريال',
-        'rating': 4.8,
-        'students': 500,
-        'description': 'تعلم أساسيات تعلم الآلة وكيفية بناء نماذج ذكية باستخدام Python وTensorFlow. هذا الكورس مصمم للمبتدئين الذين يريدون دخول عالم الذكاء الاصطناعي.',
-        'objectives': [
-          'فهم أساسيات تعلم الآلة والذكاء الاصطناعي',
-          'بناء نماذج تصنيف وتنبؤ بسيطة',
-          'استخدام مكتبات Python للتعلم الآلي',
-          'تطبيق الخوارزميات على مشاريع حقيقية',
-        ],
-        'requirements': [
-          'معرفة أساسية بالبرمجة',
-          'فهم أساسيات الرياضيات والإحصاء',
-          'جهاز كمبيوتر مع Python مثبت',
-        ],
-      },
-      'sample-nlp-101': {
-        'title': 'أساسيات معالجة اللغة الطبيعية',
-        'instructor': 'د. سارة جونسون',
-        'image': 'https://placehold.co/400x300/EF4444/FFFFFF?text=NLP+Course',
-        'lessons': 20,
-        'duration': '12 ساعة',
-        'price': '599 ريال',
-        'rating': 4.9,
-        'students': 450,
-        'description': 'اكتشف عالم معالجة اللغة الطبيعية وتعلم كيفية بناء تطبيقات تفهم وتحلل النصوص العربية والإنجليزية.',
-        'objectives': [
-          'فهم أساسيات معالجة اللغة الطبيعية',
-          'بناء نماذج تحليل المشاعر',
-          'تطوير روبوتات دردشة ذكية',
-          'معالجة النصوص العربية',
-        ],
-        'requirements': [
-          'معرفة بلغة Python',
-          'فهم أساسيات تعلم الآلة',
-          'خبرة في التعامل مع البيانات',
-        ],
-      },
-      'sample-cv-101': {
-        'title': 'الرؤية الحاسوبية والتعلم العميق',
-        'instructor': 'أ.د. عمر حسان',
-        'image': 'https://placehold.co/400x300/10B981/FFFFFF?text=CV+Course',
-        'lessons': 25,
-        'duration': '15 ساعة',
-        'price': '799 ريال',
-        'rating': 4.7,
-        'students': 350,
-        'description': 'تعلم كيفية بناء أنظمة رؤية حاسوبية متقدمة باستخدام التعلم العميق والشبكات العصبية.',
-        'objectives': [
-          'فهم أساسيات الرؤية الحاسوبية',
-          'بناء نماذج كشف الأجسام',
-          'تطوير أنظمة التعرف على الوجوه',
-          'معالجة وتحليل الصور',
-        ],
-        'requirements': [
-          'خبرة في Python',
-          'معرفة بأساسيات التعلم العميق',
-          'جهاز بمعالج رسومي GPU (مستحسن)',
-        ],
-      },
-      'sample-dl-101': {
-        'title': 'أسس التعلم العميق',
-        'instructor': 'د. أحمد الرشيد',
-        'image': 'https://placehold.co/400x300/8B5CF6/FFFFFF?text=DL+Course',
-        'lessons': 18,
-        'duration': '10 ساعة',
-        'price': 'مجاني',
-        'rating': 4.6,
-        'students': 800,
-        'description': 'دورة مجانية شاملة في التعلم العميق والشبكات العصبية الاصطناعية.',
-        'objectives': [
-          'فهم الشبكات العصبية',
-          'بناء نماذج التعلم العميق',
-          'استخدام TensorFlow وKeras',
-          'تطبيقات عملية في مجالات مختلفة',
-        ],
-        'requirements': [
-          'معرفة بتعلم الآلة',
-          'خبرة في البرمجة',
-          'فهم الجبر الخطي',
-        ],
-      },
-    };
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCourse();
+      _trackCourseView();
+    });
+  }
 
-    // Return the specific course data or a default "course not found" message
-    if (courses.containsKey(widget.courseId)) {
-      return courses[widget.courseId]!;
+  Future<void> _loadCourse() async {
+    final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+
+    // Load courses if not already loaded
+    if (courseProvider.allCourses.isEmpty) {
+      await courseProvider.loadCourses();
     }
 
-    // If course not found, return a placeholder
-    return {
-      'title': 'الدورة غير موجودة',
-      'instructor': 'غير متاح',
-      'image': 'https://placehold.co/400x300/94A3B8/FFFFFF?text=Course+Not+Found',
-      'lessons': 0,
-      'duration': '0 ساعة',
-      'price': 'غير متاح',
-      'rating': 0.0,
-      'students': 0,
-      'description': 'عذراً، لم نتمكن من العثور على هذه الدورة. يرجى العودة إلى الصفحة الرئيسية واختيار دورة أخرى.',
-      'objectives': [],
-      'requirements': [],
-    };
+    setState(() {
+      _course = courseProvider.getCourseById(widget.courseId);
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _enrollInCourse() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+
+    if (authProvider.currentUser == null) {
+      // Navigate to login if not logged in
+      if (mounted) {
+        context.go('/login');
+      }
+      return;
+    }
+
+    final success = await courseProvider.enrollInCourse(
+      widget.courseId,
+      authProvider.currentUser!.id,
+    );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم التسجيل في الدورة بنجاح!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {
+        _course = courseProvider.getCourseById(widget.courseId);
+      });
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل التسجيل في الدورة: ${courseProvider.error ?? 'خطأ غير معروف'}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final course = _getCourseData();
-    final isFree = course['price'] == 'مجاني';
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_course == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: RaqimAppBar(
+          title: 'تفاصيل الكورس',
+          backgroundColor: Colors.white,
+          titleColor: AppColors.primaryColor,
+          logoColor: AppColors.primaryColor,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80,
+                color: AppColors.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'الدورة غير موجودة',
+                style: AppTextStyles.h2,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'عذراً، لم نتمكن من العثور على هذه الدورة.',
+                style: AppTextStyles.body,
+              ),
+              const SizedBox(height: 24),
+              ModernButton(
+                text: 'العودة للصفحة الرئيسية',
+                onPressed: () => context.go('/'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final course = _course!;
+    final isFree = course.price == 0;
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBackground,
-      body: CustomScrollView(
-        slivers: [
-          // App Bar with Course Image
-          SliverAppBar(
-            expandedHeight: 250,
-            pinned: true,
-            backgroundColor: AppColors.primaryColor,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => context.go('/'),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    course['image'],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.inputBackground,
-                        child: const Icon(Icons.image, size: 64),
-                      );
-                    },
-                  ),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
+      backgroundColor: Colors.white,
+      appBar: RaqimAppBar(
+        title: 'تفاصيل الكورس',
+        backgroundColor: Colors.white,
+        titleColor: AppColors.primaryColor,
+        logoColor: AppColors.primaryColor,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Hero Image Section
+            Container(
+              width: double.infinity,
+              height: isMobile ? 250 : 400,
+              margin: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  'https://picsum.photos/400/300?random=${course.id}',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.play_circle_outline, size: 64, color: Colors.white30),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
 
-          // Course Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            // Content Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Course Title
                   Text(
-                    course['title'],
-                    style: AppTextStyles.h1,
+                    course.titleAr,
+                    style: TextStyle(
+                      fontSize: isMobile ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      height: 1.3,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // Instructor Info
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.inputBackground,
-                        child: Icon(Icons.person, color: AppColors.secondaryText),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        course['instructor'],
-                        style: AppTextStyles.cardTitle,
-                      ),
-                    ],
-                  ),
-
                   const SizedBox(height: 16),
 
-                  // Course Stats
-                  Row(
-                    children: [
-                      _buildStatItem(
-                        Icons.star,
-                        '${course['rating']}',
-                        '',
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatItem(
-                        Icons.people,
-                        '${course['students']}',
-                        'طالب',
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatItem(
-                        Icons.schedule,
-                        course['duration'],
-                        '',
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatItem(
-                        Icons.video_library,
-                        '${course['lessons']}',
-                        'درس',
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Description
-                  Text(
-                    'وصف الكورس',
-                    style: AppTextStyles.h2,
-                  ),
-                  const SizedBox(height: 12),
-                  ModernCard(
-                    margin: EdgeInsets.zero,
-                    child: Text(
-                      course['description'],
-                      style: AppTextStyles.body,
+                  // Course Stats Row
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FF),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE8EAFF)),
                     ),
+                    child: isMobile
+                        ? Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: _buildStatItem(Icons.star, '${course.rating}', 'تقييم')),
+                                  Expanded(child: _buildStatItem(Icons.people, '${course.totalStudents}', 'طالب')),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _buildStatItem(Icons.access_time, '${course.duration.inHours}', 'ساعة'),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildStatItem(Icons.star, '${course.rating}', 'تقييم'),
+                              _buildStatItem(Icons.people, '${course.totalStudents}', 'طالب'),
+                              _buildStatItem(Icons.access_time, '${course.duration.inHours}', 'ساعة'),
+                            ],
+                          ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Learning Objectives
-                  Text(
-                    'أهداف التعلم',
-                    style: AppTextStyles.h2,
-                  ),
-                  const SizedBox(height: 12),
-                  ModernCard(
-                    margin: EdgeInsets.zero,
-                    child: Column(
-                      children: (course['objectives'] as List).map((objective) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
+                  // Instructor Section
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE8EAFF)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: AppColors.primaryColor,
+                          child: Text(
+                            course.instructorName.isNotEmpty ? course.instructorName[0] : 'م',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.check,
-                                  color: AppColors.white,
-                                  size: 16,
+                              Text(
+                                'المدرب',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  objective,
-                                  style: AppTextStyles.body,
+                              const SizedBox(height: 4),
+                              Text(
+                                course.instructorName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'مدرب معتمد',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
                                 ),
                               ),
                             ],
                           ),
-                        );
-                      }).toList(),
+                        ),
+                        if (course.isEnrolled)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.green),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'مسجل',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Requirements
-                  Text(
-                    'المتطلبات',
-                    style: AppTextStyles.h2,
+                  // Description Section
+                  _buildSection(
+                    'عن الدورة',
+                    Icons.description,
+                    course.descriptionAr,
                   ),
-                  const SizedBox(height: 12),
-                  ModernCard(
-                    margin: EdgeInsets.zero,
-                    child: Column(
-                      children: (course['requirements'] as List).map((requirement) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.arrow_forward,
-                                color: AppColors.primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  requirement,
-                                  style: AppTextStyles.body,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+
+                  const SizedBox(height: 24),
+
+                  // Learning Objectives Section
+                  if (course.whatYouWillLearn.isNotEmpty)
+                    _buildListSection(
+                      'ماذا ستتعلم',
+                      Icons.checklist,
+                      course.whatYouWillLearn,
+                      Icons.check_circle,
+                      Colors.green,
                     ),
-                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Requirements Section
+                  if (course.requirements.isNotEmpty)
+                    _buildListSection(
+                      'المتطلبات',
+                      Icons.format_list_bulleted,
+                      course.requirements,
+                      Icons.arrow_forward_ios,
+                      AppColors.primaryColor,
+                    ),
 
                   const SizedBox(height: 100), // Space for bottom button
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
 
       // Bottom CTA Button
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
-              offset: const Offset(0, -2),
-              blurRadius: 12,
-              color: AppColors.shadowColor,
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    course['price'],
-                    style: AppTextStyles.h2.copyWith(
-                      color: isFree ? AppColors.success : AppColors.primaryColor,
+          child: course.isEnrolled
+              ? Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primaryColor, AppColors.primaryColor.withValues(alpha: 0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      context.go('/course/${widget.courseId}/content');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'متابعة التعلم',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    '${course['students']} طالب مسجل',
-                    style: AppTextStyles.small,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ModernButton(
-                text: isFree ? 'سجل الآن مجاناً' : 'اشترِ الآن',
-                onPressed: () {
-                  if (isFree) {
-                    // For free courses, show success message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('تم التسجيل في الدورة بنجاح!'),
-                        backgroundColor: Colors.green,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isFree ? 'مجاني' : '${course.price} ريال',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isFree ? Colors.green : AppColors.primaryColor,
+                          ),
+                        ),
+                        Text(
+                          'شامل جميع المميزات',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primaryColor, AppColors.primaryColor.withValues(alpha: 0.8)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    );
-                  } else {
-                    // For paid courses, navigate to payment page
-                    final priceString = course['price'] as String;
-                    final priceValue = double.tryParse(priceString.replaceAll('ريال', '').trim()) ?? 0.0;
-
-                    context.go('/payment', extra: {
-                      'courseId': widget.courseId,
-                      'courseName': course['title'],
-                      'amount': priceValue,
-                    });
-                  }
-                },
-                width: double.infinity,
-              ),
-            ],
-          ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (isFree) {
+                            _enrollInCourse();
+                          } else {
+                            // For paid courses, navigate to payment page
+                            context.go('/payment', extra: {
+                              'courseId': widget.courseId,
+                              'courseName': course.titleAr,
+                              'amount': course.price,
+                            });
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          isFree ? 'سجل الآن مجاناً' : 'اشترِ الآن',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
   }
 
   Widget _buildStatItem(IconData icon, String value, String label) {
-    return Row(
+    return Column(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppColors.secondaryText,
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.primaryColor,
+            size: 24,
+          ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(height: 8),
         Text(
           value,
-          style: AppTextStyles.small.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryText,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
           ),
         ),
-        if (label.isNotEmpty) ...[
-          const SizedBox(width: 2),
-          Text(
-            label,
-            style: AppTextStyles.small,
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
           ),
-        ],
+        ),
       ],
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _trackCourseView();
-    });
+  Widget _buildSection(String title, IconData icon, String content) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EAFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            content,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListSection(String title, IconData titleIcon, List<String> items, IconData itemIcon, Color iconColor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EAFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  titleIcon,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            return Padding(
+              padding: EdgeInsets.only(bottom: index < items.length - 1 ? 12 : 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      itemIcon,
+                      color: iconColor,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
   }
 
   Future<void> _trackCourseView() async {
     final analytics = AnalyticsServiceFactory.instance;
-    final course = _getCourseData();
 
     await analytics.setCurrentScreen(
       screenName: 'course_detail',
       screenClass: 'SimpleCourseDetailScreen',
     );
 
-    await analytics.logCourseView(
-      widget.courseId,
-      course['title'] ?? 'Unknown Course',
-    );
+    if (_course != null) {
+      await analytics.logCourseView(
+        widget.courseId,
+        _course!.titleAr,
+      );
+    }
   }
 }

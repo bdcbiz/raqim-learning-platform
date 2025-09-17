@@ -93,13 +93,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     // Simulate API call
     await Future.delayed(const Duration(seconds: 2));
 
+    // For testing: accept "123456" as valid code
+    final validCode = "123456";
+
     if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Navigate to reset password screen
-      context.go('/forgot-password/reset', extra: widget.email);
+      if (otp == validCode) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Navigate to reset password screen
+        context.go('/forgot-password/reset', extra: widget.email);
+      } else {
+        setState(() {
+          _isLoading = false;
+          _error = AppLocalizations.of(context)?.translate('invalidCode') ?? 'Invalid verification code. Please try again.';
+        });
+      }
     }
   }
 
@@ -228,8 +238,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primaryColor.withOpacity(0.1),
-                          AppColors.primaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withValues(alpha: 0.1),
+                          AppColors.primaryColor.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -408,7 +418,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor.withValues(alpha: 0.8),
                     AppColors.primaryColor,
                   ],
                 ),
@@ -423,7 +433,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       height: 150,
                       width: 150,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
@@ -471,7 +481,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: isWideScreen ? 18 : 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),

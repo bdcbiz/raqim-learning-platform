@@ -1,0 +1,181 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // Helper function to check if user is instructor
+    function isInstructor() {
+      return isAuthenticated() && request.auth.token.instructor == true;
+    }
+
+    // Helper function to check if file is an image
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Helper function to check if file is a video
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*');
+    }
+
+    // Helper function to check if file is a document
+    function isDocument() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/.*document.*') ||
+             request.resource.contentType.matches('text/.*');
+    }
+
+    // Helper function to check file size (max 100MB for videos, 10MB for others)
+    function isValidSize() {
+      return (isVideo() && request.resource.size < 100 * 1024 * 1024) ||
+             (!isVideo() && request.resource.size < 10 * 1024 * 1024);
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{imageId} {
+      // Users can read any profile image
+      allow read: if true;
+
+      // Users can upload their own profile image
+      allow write: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isImage() &&
+        request.resource.size < 5 * 1024 * 1024; // Max 5MB for profile images
+    }
+
+    // Course content
+    match /courses/{courseId}/{allPaths=**} {
+      // Anyone can read published course content
+      allow read: if true;
+
+      // Only course instructor or admin can upload course content
+      allow write: if isAdmin() ||
+        (isInstructor() &&
+         firestore.get(/databases/(default)/documents/courses/$(courseId)).data.instructorId == request.auth.uid) &&
+        isValidSize();
+    }
+
+    // Lesson videos
+    match /lessons/{courseId}/{lessonId}/video/{videoId} {
+      // Enrolled users can read lesson videos
+      allow read: if isAuthenticated() &&
+        (isAdmin() ||
+         firestore.exists(/databases/(default)/documents/enrollments/$(request.auth.uid + '_' + courseId)));
+
+      // Only instructors and admins can upload lesson videos
+      allow write: if (isAdmin() || isInstructor()) &&
+        isVideo() &&
+        isValidSize();
+    }
+
+    // Lesson resources (PDFs, documents)
+    match /lessons/{courseId}/{lessonId}/resources/{resourceId} {
+      // Enrolled users can read lesson resources
+      allow read: if isAuthenticated() &&
+        (isAdmin() ||
+         firestore.exists(/databases/(default)/documents/enrollments/$(request.auth.uid + '_' + courseId)));
+
+      // Only instructors and admins can upload resources
+      allow write: if (isAdmin() || isInstructor()) &&
+        isDocument() &&
+        request.resource.size < 20 * 1024 * 1024; // Max 20MB for documents
+    }
+
+    // Community post attachments
+    match /posts/{postId}/{attachmentId} {
+      // Anyone can read post attachments
+      allow read: if true;
+
+      // Authenticated users can upload attachments to their posts
+      allow create: if isAuthenticated() &&
+        firestore.get(/databases/(default)/documents/posts/$(postId)).data.userId == request.auth.uid &&
+        (isImage() || isDocument()) &&
+        request.resource.size < 10 * 1024 * 1024;
+
+      // Users can delete their own attachments
+      allow delete: if isAuthenticated() &&
+        firestore.get(/databases/(default)/documents/posts/$(postId)).data.userId == request.auth.uid;
+
+      // No updates allowed
+      allow update: if false;
+    }
+
+    // News images
+    match /news/{newsId}/{imageId} {
+      // Anyone can read news images
+      allow read: if true;
+
+      // Only admins and moderators can upload news images
+      allow write: if isAdmin() ||
+        (isAuthenticated() && request.auth.token.moderator == true) &&
+        isImage() &&
+        request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Advertisement images
+    match /advertisements/{adId}/{imageId} {
+      // Anyone can read advertisement images
+      allow read: if true;
+
+      // Only admins can upload advertisement images
+      allow write: if isAdmin() &&
+        isImage() &&
+        request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Certificates (PDF)
+    match /certificates/{userId}/{certificateId} {
+      // Users can read their own certificates
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == userId || isAdmin());
+
+      // Only system (Cloud Functions) can write certificates
+      allow write: if false;
+    }
+
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{fileId} {
+      // Users can read and write their own temp files
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isValidSize();
+
+      // Allow deletion of own temp files
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+
+      // No updates
+      allow update: if false;
+    }
+
+    // System files (logos, defaults, etc.)
+    match /system/{allPaths=**} {
+      // Anyone can read system files
+      allow read: if true;
+
+      // Only admins can write system files
+      allow write: if isAdmin();
+    }
+
+    // Backup files
+    match /backups/{allPaths=**} {
+      // Only admins can access backup files
+      allow read, write: if isAdmin();
+    }
+
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

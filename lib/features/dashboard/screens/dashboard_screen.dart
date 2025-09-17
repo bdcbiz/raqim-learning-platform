@@ -35,29 +35,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final localizations = AppLocalizations.of(context);
     return [
       NavigationDestination(
-        icon: Icon(Icons.home_outlined, color: AppColors.secondaryText),
-        selectedIcon: Icon(Icons.home, color: AppColors.primaryColor),
+        icon: Icon(Icons.home_outlined, color: Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.home, color: Color(0xFFE8E5FF)),
         label: localizations?.translate('home') ?? 'Home',
       ),
       NavigationDestination(
-        icon: Icon(Icons.school_outlined, color: AppColors.secondaryText),
-        selectedIcon: Icon(Icons.school, color: AppColors.primaryColor),
+        icon: Icon(Icons.school_outlined, color: Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.school, color: Color(0xFFE8E5FF)),
         label: localizations?.translate('myCourses') ?? 'My Courses',
       ),
       NavigationDestination(
-        icon: Icon(Icons.forum_outlined, color: AppColors.secondaryText),
-        selectedIcon: Icon(Icons.forum, color: AppColors.primaryColor),
+        icon: Icon(Icons.forum_outlined, color: Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.forum, color: Color(0xFFE8E5FF)),
         label: localizations?.translate('community') ?? 'Community',
       ),
       NavigationDestination(
-        icon: Icon(Icons.newspaper_outlined, color: AppColors.secondaryText),
-        selectedIcon: Icon(Icons.newspaper, color: AppColors.primaryColor),
+        icon: Icon(Icons.newspaper_outlined, color: Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.newspaper, color: Color(0xFFE8E5FF)),
         label: localizations?.translate('news') ?? 'News',
       ),
       NavigationDestination(
-        icon: Icon(Icons.person_outline, color: AppColors.secondaryText),
-        selectedIcon: Icon(Icons.person, color: AppColors.primaryColor),
-        label: localizations?.translate('profile') ?? 'Profile',
+        icon: Icon(Icons.settings_outlined, color: Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.settings, color: Color(0xFFE8E5FF)),
+        label: 'الإعدادات',
       ),
     ];
   }
@@ -82,21 +82,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               labelType: NavigationRailLabelType.none,
               backgroundColor: AppColors.primaryColor,
               selectedIconTheme: const IconThemeData(
-                color: Colors.white,
+                color: Color(0xFFE8E5FF),
                 size: 28,
               ),
               unselectedIconTheme: const IconThemeData(
-                color: Colors.white70,
+                color: Color(0xFFB8B2E8),
                 size: 24,
               ),
               selectedLabelTextStyle: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFFE8E5FF),
                 fontWeight: FontWeight.bold,
               ),
               unselectedLabelTextStyle: const TextStyle(
-                color: Colors.white70,
+                color: Color(0xFFB8B2E8),
               ),
-              indicatorColor: Colors.white.withOpacity(0.2),
+              indicatorColor: Color(0xFFE8E5FF).withValues(alpha: 0.3),
               leading: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -145,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
         destinations: _destinations(context),
         backgroundColor: AppColors.white,
-        indicatorColor: AppColors.primaryColor.withOpacity(0.1),
+        indicatorColor: AppColors.primaryColor.withValues(alpha: 0.1),
         surfaceTintColor: AppColors.white,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         height: 65,
@@ -401,7 +401,7 @@ class DashboardHomeScreen extends StatelessWidget {
                   final localizations = AppLocalizations.of(context);
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                      backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
                       child: Icon(
                         index % 2 == 0 ? Icons.play_circle : Icons.comment,
                         color: AppColors.primaryColor,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 import '../providers/payment_provider.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
@@ -92,15 +93,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)?.translate('paymentMethods') ?? 'اختر طريقة الدفع'),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
+      appBar: RaqimAppBar(
+        title: AppLocalizations.of(context)?.translate('paymentMethods') ?? 'اختر طريقة الدفع',
       ),
       body: Column(
         children: [
@@ -111,7 +105,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 10,
                 ),
@@ -203,7 +197,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primaryColor.withOpacity(0.1),
+                                    color: AppColors.primaryColor.withValues(alpha: 0.1),
                                     spreadRadius: 2,
                                     blurRadius: 8,
                                   ),
@@ -329,7 +323,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: const Offset(0, -2),

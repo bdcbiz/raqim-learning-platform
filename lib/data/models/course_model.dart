@@ -28,6 +28,9 @@ class CourseModel {
   // Getter methods for backward compatibility
   int get duration => totalDuration.inHours;
   List<Lesson> get lessons => modules.expand((module) => module.lessons).toList();
+  int get enrolledCount => enrolledStudents;
+  int get reviewsCount => totalRatings;
+  bool get isPublished => true; // All courses are published by default
 
   CourseModel({
     required this.id,
@@ -314,6 +317,64 @@ class Review {
       rating: json['rating'].toDouble(),
       comment: json['comment'],
       createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+}
+
+extension CourseModelExtensions on CourseModel {
+  CourseModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? thumbnailUrl,
+    String? promoVideoUrl,
+    String? instructorId,
+    String? instructorName,
+    String? instructorBio,
+    String? instructorPhotoUrl,
+    String? level,
+    String? category,
+    List<String>? objectives,
+    List<String>? requirements,
+    List<CourseModule>? modules,
+    double? price,
+    double? rating,
+    int? totalRatings,
+    int? enrolledStudents,
+    Duration? totalDuration,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isFree,
+    String? language,
+    List<Review>? reviews,
+    bool? isEnrolled,
+  }) {
+    return CourseModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      promoVideoUrl: promoVideoUrl ?? this.promoVideoUrl,
+      instructorId: instructorId ?? this.instructorId,
+      instructorName: instructorName ?? this.instructorName,
+      instructorBio: instructorBio ?? this.instructorBio,
+      instructorPhotoUrl: instructorPhotoUrl ?? this.instructorPhotoUrl,
+      level: level ?? this.level,
+      category: category ?? this.category,
+      objectives: objectives ?? this.objectives,
+      requirements: requirements ?? this.requirements,
+      modules: modules ?? this.modules,
+      price: price ?? this.price,
+      rating: rating ?? this.rating,
+      totalRatings: totalRatings ?? this.totalRatings,
+      enrolledStudents: enrolledStudents ?? this.enrolledStudents,
+      totalDuration: totalDuration ?? this.totalDuration,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isFree: isFree ?? this.isFree,
+      language: language ?? this.language,
+      reviews: reviews ?? this.reviews,
+      isEnrolled: isEnrolled ?? this.isEnrolled,
     );
   }
 }

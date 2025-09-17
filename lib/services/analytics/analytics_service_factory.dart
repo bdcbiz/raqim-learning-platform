@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'analytics_interface.dart';
-import 'firebase_analytics_service.dart';
+// import 'firebase_analytics_service.dart'; // Temporarily disabled - Firebase not configured
 import 'mock_analytics_service.dart';
 
 class AnalyticsServiceFactory {
@@ -12,14 +12,18 @@ class AnalyticsServiceFactory {
   }
 
   static AnalyticsServiceInterface _createAnalyticsService() {
-    if (kIsWeb) {
-      return FirebaseAnalyticsService();
-    } else if (defaultTargetPlatform == TargetPlatform.android ||
-               defaultTargetPlatform == TargetPlatform.iOS) {
-      return FirebaseAnalyticsService();
-    } else {
-      return MockAnalyticsService();
-    }
+    // Temporarily using MockAnalyticsService until Firebase is configured
+    return MockAnalyticsService();
+
+    // Original code - re-enable when Firebase is configured:
+    // if (kIsWeb) {
+    //   return FirebaseAnalyticsService();
+    // } else if (defaultTargetPlatform == TargetPlatform.android ||
+    //            defaultTargetPlatform == TargetPlatform.iOS) {
+    //   return FirebaseAnalyticsService();
+    // } else {
+    //   return MockAnalyticsService();
+    // }
   }
 
   static void resetInstance() {
@@ -31,6 +35,9 @@ class AnalyticsServiceFactory {
   }
 
   static void setFirebaseService() {
-    _instance = FirebaseAnalyticsService();
+    // Temporarily using MockAnalyticsService until Firebase is configured
+    _instance = MockAnalyticsService();
+    // Original code - re-enable when Firebase is configured:
+    // _instance = FirebaseAnalyticsService();
   }
 }

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as Math;
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
@@ -603,7 +603,7 @@ class WebAuthService extends AuthServiceInterface {
   Future<void> updateProfilePhoto(String photoUrl) async {
     if (_currentUser == null) return;
 
-    print('DEBUG: WebAuthService.updateProfilePhoto called with photoUrl: ${photoUrl.substring(0, Math.min(100, photoUrl.length))}');
+    print('DEBUG: WebAuthService.updateProfilePhoto called with photoUrl: ${photoUrl.substring(0, math.min(100, photoUrl.length))}');
 
     // Update current user with new photo
     _currentUser = UserModel(
@@ -615,7 +615,7 @@ class WebAuthService extends AuthServiceInterface {
       createdAt: _currentUser!.createdAt,
     );
 
-    print('DEBUG: Updated _currentUser.photoUrl to: ${_currentUser!.photoUrl?.substring(0, Math.min(100, _currentUser!.photoUrl?.length ?? 0))}');
+    print('DEBUG: Updated _currentUser.photoUrl to: ${_currentUser!.photoUrl?.substring(0, math.min(100, _currentUser!.photoUrl?.length ?? 0))}');
 
     // Save to session storage (this is the critical part)
     await _saveCurrentUser(_currentUser!);
@@ -646,5 +646,53 @@ class WebAuthService extends AuthServiceInterface {
     _authStateController?.add(_currentUser);
 
     print('DEBUG: WebAuthService.updateProfilePhoto completed - notified listeners');
+  }
+
+  Future<void> updateUserName(String name) async {
+    if (_currentUser == null) return;
+
+    print('DEBUG: WebAuthService.updateUserName called with name: $name');
+
+    // Update current user with new name
+    _currentUser = UserModel(
+      id: _currentUser!.id,
+      email: _currentUser!.email,
+      name: name,
+      photoUrl: _currentUser!.photoUrl,
+      emailVerified: _currentUser!.emailVerified,
+      createdAt: _currentUser!.createdAt,
+    );
+
+    print('DEBUG: Updated _currentUser.name to: ${_currentUser!.name}');
+
+    // Save to session storage
+    await _saveCurrentUser(_currentUser!);
+
+    // Also update the stored user data in _usersKey
+    final userData = await _getStoredUser(_currentUser!.email);
+    if (userData != null) {
+      userData['name'] = name;
+      await _saveUser(_currentUser!.email, userData);
+      print('DEBUG: Updated stored user data with new name');
+    }
+
+    // Update in local database
+    await _localDatabase.updateUser(_currentUser!.email, {'name': name});
+    print('DEBUG: Updated local database with new name');
+
+    // Update Firestore (non-blocking) - just save the updated user
+    try {
+      _firestoreService.saveUserToDatabase(_currentUser!).catchError((e) {
+        print('Firestore name update failed (non-critical): $e');
+      });
+    } catch (e) {
+      print('Firestore not available: $e');
+    }
+
+    // Force UI update
+    notifyListeners();
+    _authStateController?.add(_currentUser);
+
+    print('DEBUG: WebAuthService.updateUserName completed - notified listeners');
   }
 }

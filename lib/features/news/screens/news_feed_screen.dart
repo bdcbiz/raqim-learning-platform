@@ -6,6 +6,7 @@ import '../providers/news_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 
 class NewsFeedScreen extends StatelessWidget {
   const NewsFeedScreen({super.key});
@@ -102,37 +103,38 @@ class NewsFeedScreen extends StatelessWidget {
   Widget _buildDesktopLayout(BuildContext context, NewsProvider newsProvider) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
+      appBar: RaqimAppBar(
+        title: AppLocalizations.of(context)?.translate('newsTitle') ?? 'الأخبار',
         backgroundColor: Colors.white,
-        elevation: 0,
-        toolbarHeight: 70,
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            const Spacer(),
-            // Search bar only
-            Container(
-              width: 300,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F0F0),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'ابحث عن الأخبار...',
-                  hintStyle: AppTextStyles.small.copyWith(
-                    color: Colors.grey[500],
-                  ),
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        titleColor: AppColors.primaryColor,
+        logoColor: AppColors.primaryColor,
+        showBackButton: false,
+        actions: [
+          // Search bar only
+          Container(
+            width: 300,
+            height: 40,
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F0F0),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: TextField(
+              onChanged: (value) {
+                newsProvider.searchNews(value);
+              },
+              decoration: InputDecoration(
+                hintText: 'ابحث عن الأخبار...',
+                hintStyle: AppTextStyles.small.copyWith(
+                  color: Colors.grey[500],
                 ),
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
             ),
-            const SizedBox(width: 16),
-          ],
-        ),
+          ),
+        ],
       ),
       body: newsProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -171,46 +173,49 @@ class NewsFeedScreen extends StatelessWidget {
   Widget _buildMobileLayout(BuildContext context, NewsProvider newsProvider) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
+      appBar: RaqimAppBar(
+        title: AppLocalizations.of(context)?.translate('newsTitle') ?? 'الأخبار',
         backgroundColor: Colors.white,
-        elevation: 0,
-        toolbarHeight: 60,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: Text(
-          AppLocalizations.of(context)?.translate('newsTitle') ?? 'الأخبار',
-          style: AppTextStyles.body.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                _buildCategoryChip('الكل', newsProvider, context),
-                _buildCategoryChip('أبحاث جديدة', newsProvider, context),
-                _buildCategoryChip('منتجات وتطبيقات', newsProvider, context),
-                _buildCategoryChip('استثمارات وتمويل', newsProvider, context),
-                _buildCategoryChip('أخلاقيات الذكاء الاصطناعي', newsProvider, context),
-              ],
-            ),
-          ),
-        ),
+        titleColor: AppColors.primaryColor,
+        logoColor: AppColors.primaryColor,
+        showBackButton: false,
       ),
       body: newsProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () => newsProvider.refreshNews(),
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: newsProvider.news.length,
-                itemBuilder: (context, index) {
-                  final article = newsProvider.news[index];
-                  return _buildMobileArticleCard(context, article, newsProvider);
-                },
+              child: Column(
+                children: [
+                  // Categories at the top
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    color: Colors.white,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildCategoryChip('الكل', newsProvider, context),
+                          _buildCategoryChip('أبحاث جديدة', newsProvider, context),
+                          _buildCategoryChip('منتجات وتطبيقات', newsProvider, context),
+                          _buildCategoryChip('استثمارات وتمويل', newsProvider, context),
+                          _buildCategoryChip('أخلاقيات الذكاء الاصطناعي', newsProvider, context),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // News list
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: newsProvider.news.length,
+                      itemBuilder: (context, index) {
+                        final article = newsProvider.news[index];
+                        return _buildMobileArticleCard(context, article, newsProvider);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
     );

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/course_provider.dart';
-import '../widgets/common/modern_course_card.dart';
+import '../widgets/common/animated_course_card.dart';
+import '../widgets/common/modern_course_card.dart' show ModernCourseCard;
 import 'course_detail_screen.dart';
+import '../core/widgets/raqim_app_bar.dart';
 
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});
@@ -27,16 +29,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text(
-          'جميع الدورات',
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+      appBar: const RaqimAppBar(
+        title: 'جميع الدورات',
       ),
       body: Consumer<CourseProvider>(
         builder: (context, courseProvider, child) {
@@ -363,7 +357,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       ),
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final course = filteredCourses[index];
-                        return ModernCourseCard(
+                        return AnimatedCourseCard(
                           title: course.title,
                           instructor: course.instructorName,
                           imageUrl: course.thumbnail ?? 'https://picsum.photos/400/300?random=${course.id}',

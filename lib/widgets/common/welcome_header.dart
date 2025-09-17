@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/responsive_theme.dart';
+import '../notification_bar.dart';
 
 class WelcomeHeader extends StatelessWidget {
   final String userName;
@@ -29,7 +31,7 @@ class WelcomeHeader extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: AppColors.inputBackground,
                 border: Border.all(
-                  color: AppColors.primaryColor.withOpacity(0.2),
+                  color: AppColors.primaryColor.withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
@@ -53,26 +55,18 @@ class WelcomeHeader extends StatelessWidget {
               children: [
                 Text(
                   'أهلاً، $userName',
-                  style: AppTextStyles.h2,
+                  style: ResponsiveAppTextStyles.h2(context),
                 ),
                 Text(
                   'ماذا تود أن تتعلم اليوم؟',
-                  style: AppTextStyles.bodySecondary,
+                  style: ResponsiveAppTextStyles.bodySmall(context),
                 ),
               ],
             ),
           ),
           
-          // Notification Icon
-          IconButton(
-            onPressed: () {
-              // Handle notifications
-            },
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: AppColors.secondaryText,
-            ),
-          ),
+          // Notification Bar
+          const NotificationBar(),
         ],
       ),
     );

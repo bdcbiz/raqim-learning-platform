@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:provider/provider.dart';
 import '../widgets/responsive_auth_layout.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../services/auth/auth_interface.dart';
 import '../../../services/auth/auth_service_factory.dart';
 import '../../../services/validation/email_validation_service.dart';
 import '../../../services/database/database_service.dart';
+import '../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -95,13 +96,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _errorMessage = null;
       });
 
+      print('DEBUG: Starting registration with email: ${values['email']}');
+
       final authService = AuthServiceFactory.createAuthService();
+      print('DEBUG: AuthService created: ${authService.runtimeType}');
 
       final result = await authService.registerWithEmailAndPassword(
         name: values['name'],
         email: values['email'],
         password: values['password'],
       );
+
+      print('DEBUG: Registration result - Success: ${result.success}');
+      print('DEBUG: Registration result - Error: ${result.errorMessage}');
+      print('DEBUG: Registration result - User: ${result.user?.email}');
 
       setState(() {
         _isLoading = false;
@@ -113,17 +121,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           try {
             await _databaseService.createUser(result.user!);
             print('DEBUG: User created in database successfully');
+
+            // Update AuthProvider to set the current user
+            if (mounted) {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.login(result.user!.email, '');
+            }
+
           } catch (e) {
             print('ERROR: Failed to create user in database: $e');
             // Continue anyway - user is already registered in Firebase
           }
         }
 
-        if (result.status == AuthenticationStatus.authenticated) {
+        print('DEBUG: Registration successful, status: ${result.status}');
+        print('DEBUG: User email verified: ${result.user?.emailVerified}');
+        print('DEBUG: Navigating to email verification screen...');
+
+        // Navigate directly to home after successful registration for testing
+        if (mounted) {
           context.go('/');
-        } else if (result.status == AuthenticationStatus.emailNotVerified) {
-          // Navigate to email verification screen
-          context.go('/email-verification');
+          print('DEBUG: Navigation command sent to home page');
         }
       } else if (mounted) {
         setState(() {

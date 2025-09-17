@@ -37,11 +37,11 @@ class ResponsiveAuthLayout extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: isDarkMode 
                 ? [
-                    AppColors.primaryColor.withOpacity(0.2),
+                    AppColors.primaryColor.withValues(alpha: 0.2),
                     Theme.of(context).scaffoldBackgroundColor,
                   ]
                 : [
-                    AppColors.primaryColor.withOpacity(0.1),
+                    AppColors.primaryColor.withValues(alpha: 0.1),
                     Colors.white,
                   ],
             ),
@@ -95,8 +95,8 @@ class ResponsiveAuthLayout extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primaryColor.withOpacity(0.05),
-                AppColors.primaryColor.withOpacity(0.05),
+                AppColors.primaryColor.withValues(alpha: 0.05),
+                AppColors.primaryColor.withValues(alpha: 0.05),
               ],
             ),
           ),
@@ -165,7 +165,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor.withValues(alpha: 0.8),
                     AppColors.primaryColor,
                   ],
                 ),
@@ -191,7 +191,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 20,
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 height: 1.5,
                               ),
                             ),
@@ -199,7 +199,7 @@ class ResponsiveAuthLayout extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(

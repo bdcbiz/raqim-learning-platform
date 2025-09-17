@@ -5,6 +5,7 @@ class PostModel {
   final String? userPhotoUrl;
   final String title;
   final String content;
+  final String? category;
   final List<String> tags;
   final List<String> images;
   final String? link;
@@ -25,6 +26,7 @@ class PostModel {
     this.userPhotoUrl,
     required this.title,
     required this.content,
+    this.category,
     this.tags = const [],
     this.images = const [],
     this.link,
@@ -50,6 +52,7 @@ class PostModel {
       'userPhotoUrl': userPhotoUrl,
       'title': title,
       'content': content,
+      'category': category,
       'tags': tags,
       'images': images,
       'link': link,
@@ -73,6 +76,7 @@ class PostModel {
       userPhotoUrl: json['userPhotoUrl'],
       title: json['title'],
       content: json['content'],
+      category: json['category'],
       tags: List<String>.from(json['tags'] ?? []),
       images: List<String>.from(json['images'] ?? []),
       link: json['link'],
@@ -98,6 +102,7 @@ class PostModel {
     String? userPhotoUrl,
     String? title,
     String? content,
+    String? category,
     List<String>? tags,
     List<String>? images,
     String? link,
@@ -118,6 +123,7 @@ class PostModel {
       userPhotoUrl: userPhotoUrl ?? this.userPhotoUrl,
       title: title ?? this.title,
       content: content ?? this.content,
+      category: category ?? this.category,
       tags: tags ?? this.tags,
       images: images ?? this.images,
       link: link ?? this.link,

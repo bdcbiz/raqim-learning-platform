@@ -28,65 +28,65 @@ class AppTextStyles {
   // Font family - using Tajawal as specified in the design guide
   static const String fontFamily = 'Tajawal';
   
-  // Main heading (H1) - 24px, Bold
+  // Main heading (H1) - 32px, Bold
   static TextStyle get h1 => GoogleFonts.tajawal(
+    fontSize: 32,
+    fontWeight: FontWeight.bold,
+    color: AppColors.primaryText,
+  );
+  
+  // Sub heading (H2) - 28px, Bold
+  static TextStyle get h2 => GoogleFonts.tajawal(
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+    color: AppColors.primaryText,
+  );
+
+  // Sub heading (H3) - 24px, Bold
+  static TextStyle get h3 => GoogleFonts.tajawal(
     fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.primaryText,
   );
   
-  // Sub heading (H2) - 20px, Bold
-  static TextStyle get h2 => GoogleFonts.tajawal(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    color: AppColors.primaryText,
-  );
-
-  // Sub heading (H3) - 18px, Bold
-  static TextStyle get h3 => GoogleFonts.tajawal(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: AppColors.primaryText,
-  );
-  
-  // Card title - 16px, Semi-bold
+  // Card title - 24px, Semi-bold (increased from 20px)
   static TextStyle get cardTitle => GoogleFonts.tajawal(
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: FontWeight.w600,
     color: AppColors.primaryText,
   );
   
-  // Body text - 14px, Regular
+  // Body text - 20px, Regular (increased from 18px)
   static TextStyle get body => GoogleFonts.tajawal(
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: FontWeight.normal,
     color: AppColors.primaryText,
   );
   
   // Secondary body text
   static TextStyle get bodySecondary => GoogleFonts.tajawal(
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
     color: AppColors.secondaryText,
   );
   
-  // Small text - 12px, Regular
+  // Small text - 16px, Regular
   static TextStyle get small => GoogleFonts.tajawal(
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: FontWeight.normal,
     color: AppColors.secondaryText,
   );
   
   // Button text
   static TextStyle get button => GoogleFonts.tajawal(
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: FontWeight.w600,
     color: AppColors.white,
   );
   
   // Pill button text
   static TextStyle get pill => GoogleFonts.tajawal(
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: FontWeight.w500,
   );
 }
@@ -127,7 +127,7 @@ class AppTheme {
         foregroundColor: AppColors.primaryText,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.h2,
+        titleTextStyle: AppTextStyles.body, // Reduced from h2 (28px) to body (18px)
       ),
       
       // Card theme

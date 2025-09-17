@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'dart:convert';
-import 'dart:math' as Math;
+import 'dart:math' as math;
 import '../../auth/providers/auth_provider.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../../services/auth/web_auth_service.dart';
@@ -160,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
+                      color: AppColors.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -181,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.1),
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -207,13 +207,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           });
 
                           final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                          
+
                           // Upload image to server
                           try {
                             // TODO: Implement actual API upload
                             // final response = await ApiService.uploadAvatar(image.path);
                             // await authProvider.updateProfileImage(response['url']);
-                            
+
                             // For now, use local path
                             await authProvider.updateProfileImage(image.path);
                           } catch (uploadError) {
@@ -263,7 +263,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileImage(dynamic user) {
     print('DEBUG: _buildProfileImage called');
-    print('DEBUG: user photoUrl: ${user?.photoUrl?.substring(0, 100) ?? 'null'}');
+    final photoUrl = user?.photoUrl ?? '';
+    print('DEBUG: user photoUrl: ${photoUrl.length > 100 ? photoUrl.substring(0, 100) + '...' : photoUrl}');
 
     if (user?.photoUrl != null && user.photoUrl.isNotEmpty) {
       // Check if it's a data URL (for web)
@@ -278,8 +279,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return ClipOval(
             child: Image.memory(
               imageBytes,
-              width: 96,
-              height: 96,
+              width: 120,
+              height: 120,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 print('DEBUG: Error loading image: $error');
@@ -297,14 +298,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return ClipOval(
           child: Image.network(
             user.photoUrl,
-            width: 96,
-            height: 96,
+            width: 120,
+            height: 120,
             fit: BoxFit.cover,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
               return SizedBox(
-                width: 96,
-                height: 96,
+                width: 120,
+                height: 120,
                 child: Center(
                   child: CircularProgressIndicator(
                     value: loadingProgress.expectedTotalBytes != null
@@ -325,8 +326,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return ClipOval(
           child: Image.file(
             File(user.photoUrl),
-            width: 96,
-            height: 96,
+            width: 120,
+            height: 120,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return _buildDefaultAvatar(user);
@@ -339,13 +340,245 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDefaultAvatar(dynamic user) {
-    return Text(
-      user?.name.substring(0, 1).toUpperCase() ?? 'U',
-      style: const TextStyle(
-        fontSize: 40,
-        fontWeight: FontWeight.bold,
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        color: AppColors.primaryColor.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          user?.name.substring(0, 1).toUpperCase() ?? 'U',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryColor,
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: AppColors.primaryColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            trailing ?? Icon(
+              Icons.chevron_right,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, dynamic user) {
+    final nameController = TextEditingController(text: user?.name ?? '');
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'تعديل الملف الشخصي',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'الاسم',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: TextEditingController(text: user?.email ?? ''),
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'البريد الإلكتروني',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'إلغاء',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (nameController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('الرجاء إدخال اسم صحيح'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (BuildContext context) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                      );
+
+                      try {
+                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                        final authService = Provider.of<AuthServiceInterface>(context, listen: false);
+
+                        // Update name in AuthProvider
+                        await authProvider.updateUserName(nameController.text.trim());
+
+                        // Update in WebAuthService if available
+                        if (authService is WebAuthService) {
+                          final webAuth = authService as dynamic;
+                          await webAuth.updateUserName(nameController.text.trim());
+                          await authService.reloadUser();
+                        }
+
+                        // Close loading dialog
+                        Navigator.pop(context);
+
+                        // Close edit dialog
+                        Navigator.pop(dialogContext);
+
+                        // Force rebuild of the parent widget
+                        if (context.mounted) {
+                          setState(() {});
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم تحديث الملف الشخصي بنجاح'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
+                        // Close loading dialog
+                        Navigator.pop(context);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('حدث خطأ: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'حفظ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          actionsPadding: const EdgeInsets.all(16),
+        );
+      },
+    ).then((_) {
+      // Force rebuild after dialog closes to ensure UI updates
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -359,162 +592,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = webUser ?? authProvider.currentUser;
 
     print('DEBUG: Profile build - webUser: ${webUser?.email}, authProvider user: ${authProvider.currentUser?.email}');
-    print('DEBUG: Using user with photoUrl: ${user?.photoUrl?.substring(0, Math.min(100, user.photoUrl?.length ?? 0)) ?? 'null'}');
+    print('DEBUG: Using user with photoUrl: ${user?.photoUrl?.substring(0, math.min(100, user.photoUrl?.length ?? 0)) ?? 'null'}');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)?.translate('profile') ?? 'الملف الشخصي'),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      backgroundColor: Colors.grey[50],
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Profile Header Section
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 32),
               child: Column(
                 children: [
+                  // Profile Image with Camera Icon
                   Stack(
                     alignment: Alignment.bottomRight,
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.white,
-                        child: _isUploading
-                            ? const CircularProgressIndicator()
-                            : _buildProfileImage(user),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.transparent,
+                          child: _isUploading
+                              ? const CircularProgressIndicator()
+                              : _buildProfileImage(user),
+                        ),
                       ),
                       Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2,
+                        bottom: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: _isUploading
+                              ? null
+                              : () => _showImageSourceDialog(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 3,
+                              ),
                             ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.camera_alt,
+                            child: const Icon(
+                              Icons.edit,
                               color: Colors.white,
-                              size: 20,
+                              size: 16,
                             ),
-                            onPressed: _isUploading
-                                ? null
-                                : () => _showImageSourceDialog(context),
-                            padding: const EdgeInsets.all(4),
-                            constraints: const BoxConstraints(),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
+                  // User Name
                   Text(
                     user?.name ?? 'المستخدم',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
+                    style: const TextStyle(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
+                  // User Type
                   Text(
-                    user?.email ?? '',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white70,
+                    'مشتري',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
             ),
+            // Settings Options
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.school),
-                          title: Text(AppLocalizations.of(context)?.translate('enrolledCourses') ?? 'الدورات المسجلة'),
-                          trailing: Text(
-                            '${user?.enrolledCourses.length ?? 0}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        const Divider(),
-                        ListTile(
-                          leading: const Icon(Icons.check_circle),
-                          title: Text(AppLocalizations.of(context)?.translate('completedCourses') ?? 'الدورات المكتملة'),
-                          trailing: Text(
-                            '${user?.completedCourses.length ?? 0}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        const Divider(),
-                        ListTile(
-                          leading: const Icon(Icons.workspace_premium),
-                          title: Text(AppLocalizations.of(context)?.translate('certificates') ?? 'الشهادات'),
-                          trailing: Text(
-                            '${user?.certificates.length ?? 0}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _buildSettingItem(
+                    icon: Icons.person_outline,
+                    title: 'تعديل الملف الشخصي',
+                    onTap: () => _showEditProfileDialog(context, user),
                   ),
-                  const SizedBox(height: 16),
-                  Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.star),
-                          title: Text(AppLocalizations.of(context)?.translate('points') ?? 'النقاط'),
-                          trailing: Text(
-                            '${user?.points ?? 0}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const Divider(),
-                        ListTile(
-                          leading: const Icon(Icons.emoji_events),
-                          title: Text(AppLocalizations.of(context)?.translate('badges') ?? 'الشارات'),
-                          trailing: Text(
-                            '${user?.badges.length ?? 0}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                      ],
+                  _buildSettingItem(
+                    icon: Icons.notifications_outlined,
+                    title: 'الإشعارات',
+                    trailing: Switch(
+                      value: true,
+                      onChanged: (value) {
+                        // TODO: Implement notification settings
+                      },
+                      activeColor: AppColors.primaryColor,
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // Sign Out Button
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
+                    height: 56,
+                    child: ElevatedButton.icon(
                       onPressed: () async {
                         // For web, use WebAuthService's signOut
                         if (kIsWeb && authService is WebAuthService) {
@@ -529,10 +715,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
                       },
                       icon: const Icon(Icons.logout),
-                      label: Text(AppLocalizations.of(context)?.translate('logout') ?? 'تسجيل الخروج'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        foregroundColor: Colors.red,
+                      label: const Text(
+                        'تسجيل الخروج',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),

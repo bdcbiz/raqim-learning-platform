@@ -192,7 +192,7 @@ class _NotificationSidebarState extends State<NotificationSidebar>
                   child: GestureDetector(
                     onTap: widget.onClose,
                     child: Container(
-                      color: Colors.black.withOpacity(0.5 * _controller.value),
+                      color: Colors.black.withValues(alpha: 0.5 * _controller.value),
                     ),
                   ),
                 ),
@@ -209,7 +209,7 @@ class _NotificationSidebarState extends State<NotificationSidebar>
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(-2, 0),
                         ),
@@ -224,7 +224,7 @@ class _NotificationSidebarState extends State<NotificationSidebar>
                             color: AppColors.primaryColor,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -310,7 +310,7 @@ class _NotificationSidebarState extends State<NotificationSidebar>
                               return Material(
                                 color: notification.isRead 
                                     ? Colors.white 
-                                    : AppColors.primaryColor.withOpacity(0.05),
+                                    : AppColors.primaryColor.withValues(alpha: 0.05),
                                 child: InkWell(
                                   onTap: () {
                                     // Handle notification tap
@@ -326,7 +326,7 @@ class _NotificationSidebarState extends State<NotificationSidebar>
                                           height: 40,
                                           decoration: BoxDecoration(
                                             color: _getNotificationColor(notification.type)
-                                                .withOpacity(0.1),
+                                                .withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Icon(

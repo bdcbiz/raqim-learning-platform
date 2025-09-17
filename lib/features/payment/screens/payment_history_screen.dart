@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 import '../providers/payment_provider.dart';
 import '../models/payment_method.dart';
 
@@ -68,15 +69,8 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
-      appBar: AppBar(
-        title: const Text('سجل المدفوعات'),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
+      appBar: RaqimAppBar(
+        title: 'سجل المدفوعات',
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
@@ -105,7 +99,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                     gradient: LinearGradient(
                       colors: [
                         AppColors.primaryColor,
-                        AppColors.primaryColor.withOpacity(0.8),
+                        AppColors.primaryColor.withValues(alpha: 0.8),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -124,7 +118,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                       Container(
                         width: 1,
                         height: 50,
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
                       _buildStatCard(
                         context,
@@ -193,7 +187,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               spreadRadius: 1,
                               blurRadius: 10,
                             ),
@@ -210,7 +204,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                                   width: 50,
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color: _getStatusColor(transaction.status).withOpacity(0.1),
+                                    color: _getStatusColor(transaction.status).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
@@ -265,7 +259,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(transaction.status).withOpacity(0.1),
+                                        color: _getStatusColor(transaction.status).withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -309,7 +303,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: 12,
           ),
         ),
@@ -327,7 +321,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           _filterStatus = value;
         });
       },
-      selectedColor: AppColors.primaryColor.withOpacity(0.2),
+      selectedColor: AppColors.primaryColor.withValues(alpha: 0.2),
       checkmarkColor: AppColors.primaryColor,
       labelStyle: TextStyle(
         color: isSelected ? AppColors.primaryColor : Colors.grey[700],
@@ -403,7 +397,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(transaction.status).withOpacity(0.1),
+                    color: _getStatusColor(transaction.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(

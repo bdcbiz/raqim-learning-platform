@@ -4,6 +4,7 @@ import '../providers/certificates_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 
 class CertificatesScreen extends StatelessWidget {
   const CertificatesScreen({super.key});
@@ -11,15 +12,8 @@ class CertificatesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context)?.translate('myCertificates') ?? 'شهاداتي',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+      appBar: RaqimAppBar(
+        title: AppLocalizations.of(context)?.translate('myCertificates') ?? 'شهاداتي',
       ),
       body: Consumer<CertificatesProvider>(
         builder: (context, provider, child) {
@@ -80,8 +74,8 @@ class CertificatesScreen extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppColors.primaryColor.withOpacity(0.1),
-                          AppColors.primaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withValues(alpha: 0.1),
+                          AppColors.primaryColor.withValues(alpha: 0.05),
                         ],
                       ),
                     ),
@@ -238,7 +232,7 @@ class CertificatesScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

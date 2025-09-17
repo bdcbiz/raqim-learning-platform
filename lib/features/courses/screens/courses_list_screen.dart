@@ -7,7 +7,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
-import '../../../widgets/common/modern_course_card.dart';
+import '../../../widgets/common/animated_course_card.dart';
+import '../../../widgets/common/modern_course_card.dart' show ModernCourseCard;
 
 class CoursesListScreen extends StatefulWidget {
   final bool showOnlyEnrolled;
@@ -98,20 +99,28 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
       backgroundColor: AppColors.primaryBackground,
       appBar: AppBar(
         title: Text(
-          widget.showOnlyEnrolled 
+          widget.showOnlyEnrolled
               ? (AppLocalizations.of(context)?.translate('myCourses') ?? 'كورساتي')
               : (AppLocalizations.of(context)?.translate('coursesTitle') ?? 'الدورات التعليمية'),
-          style: AppTextStyles.h2,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        backgroundColor: AppColors.primaryBackground,
+        backgroundColor: AppColors.primaryColor,
         elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ),
       ),
       body: Column(
         children: [
           // Search and Filters Section
           Container(
-            color: AppColors.primaryBackground,
-            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 // Search Bar
@@ -127,25 +136,136 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                     coursesProvider.filterCourses(searchQuery: '');
                   },
                 ),
-                
+
+                const SizedBox(height: 24),
+
+                // Filters Header
+                Row(
+                  children: [
+                    Text(
+                      'الفلاتر',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () {
+                        coursesProvider.filterCourses(category: 'الكل');
+                      },
+                      icon: Icon(Icons.clear_all, size: 18, color: Colors.grey[600]),
+                      label: Text(
+                        'مسح الكل',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 16),
-                
-                // Filter Pills
+
+                // By Category
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    'حسب الفئة:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Categories Filter - Horizontal Scrollable
                 SizedBox(
                   height: 40,
-                  child: ListView.separated(
+                  child: ListView(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _getFilterCategories(context).length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final category = _getFilterCategories(context)[index];
-                      return PillButton(
-                        text: category['label'],
-                        isSelected: _isFilterSelected(category['value'], coursesProvider),
-                        onPressed: () => _onFilterPressed(category['value'], coursesProvider),
+                    children: _getCategoryFilters(context).map((category) {
+                      final isSelected = _isFilterSelected(category['value'], coursesProvider);
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: GestureDetector(
+                          onTap: () => _onFilterPressed(category['value'], coursesProvider),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF4285F4) : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF4285F4) : Colors.grey[300]!,
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              category['label'],
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.grey[700],
+                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
                       );
-                    },
+                    }).toList(),
                   ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // By Level
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    'حسب المستوى:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Level Filters
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _getLevelFilters(context).map((level) {
+                    final isSelected = _isFilterSelected(level['value'], coursesProvider);
+                    return GestureDetector(
+                      onTap: () => _onFilterPressed(level['value'], coursesProvider),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF4285F4) : Colors.transparent,
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF4285F4) : Colors.grey[300]!,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          level['label'],
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.grey[700],
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ],
             ),
@@ -187,7 +307,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                           itemCount: displayCourses.length,
                           itemBuilder: (context, index) {
                             final course = displayCourses[index];
-                            return ModernCourseCard(
+                            return AnimatedCourseCard(
                               title: _getLocalizedCourseTitle(course, context),
                               instructor: _getLocalizedInstructorName(course, context),
                               imageUrl: course.thumbnailUrl,
@@ -210,7 +330,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     );
   }
 
-  List<Map<String, dynamic>> _getFilterCategories(BuildContext context) {
+  List<Map<String, dynamic>> _getCategoryFilters(BuildContext context) {
     return [
       {
         'label': AppLocalizations.of(context)?.translate('all') ?? 'الكل',
@@ -223,40 +343,45 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         'type': 'category'
       },
       {
-        'label': 'معالجة اللغات', // Match mock data exactly
+        'label': 'معالجة اللغات',
         'value': 'معالجة اللغات',
         'type': 'category'
       },
       {
-        'label': 'رؤية الحاسوب', // Match mock data exactly
+        'label': 'رؤية الحاسوب',
         'value': 'رؤية الحاسوب',
         'type': 'category'
       },
       {
-        'label': 'البرمجة', // Add missing category from mock data
+        'label': 'البرمجة',
         'value': 'البرمجة',
         'type': 'category'
       },
       {
-        'label': 'الذكاء التوليدي', // Add missing category from mock data
+        'label': 'الذكاء التوليدي',
         'value': 'الذكاء التوليدي',
         'type': 'category'
       },
       {
-        'label': 'التعلم العميق', // Add missing category from mock data
+        'label': 'التعلم العميق',
         'value': 'التعلم العميق',
         'type': 'category'
       },
       {
-        'label': 'علم البيانات', // Add missing category from mock data
+        'label': 'علم البيانات',
         'value': 'علم البيانات',
         'type': 'category'
       },
       {
-        'label': 'الأعمال', // Add missing category from mock data
+        'label': 'الأعمال',
         'value': 'الأعمال',
         'type': 'category'
       },
+    ];
+  }
+
+  List<Map<String, dynamic>> _getLevelFilters(BuildContext context) {
+    return [
       {
         'label': _getLocalizedLevel('مبتدئ', context),
         'value': 'مبتدئ',

@@ -5,6 +5,7 @@ import '../providers/courses_provider.dart';
 import '../../certificates/providers/certificates_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/widgets/raqim_app_bar.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
@@ -42,15 +43,8 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context)?.translate('myCoursesTitle') ?? 'My Courses',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+      appBar: RaqimAppBar(
+        title: AppLocalizations.of(context)?.translate('myCoursesTitle') ?? 'My Courses',
       ),
       body: Column(
         children: [
@@ -340,7 +334,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
         });
       },
       backgroundColor: Colors.grey[200],
-      selectedColor: AppColors.primaryColor.withOpacity(0.2),
+      selectedColor: AppColors.primaryColor.withValues(alpha: 0.2),
       checkmarkColor: AppColors.primaryColor,
       labelStyle: TextStyle(
         color: isSelected ? AppColors.primaryColor : Colors.grey[700],

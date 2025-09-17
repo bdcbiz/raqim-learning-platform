@@ -1,55 +1,31 @@
-import 'package:firebase_analytics/firebase_analytics.dart';
+// TEMPORARILY DISABLED: Firebase Analytics is not configured
+// This file will be re-enabled once Firebase dependencies are properly installed
+
 import 'package:flutter/foundation.dart';
 import 'analytics_interface.dart';
 
+/// Firebase Analytics implementation - currently disabled
+/// Using MockAnalyticsService instead until Firebase is configured
 class FirebaseAnalyticsService implements AnalyticsServiceInterface {
-  static FirebaseAnalytics? _analytics;
-  static FirebaseAnalyticsObserver? _observer;
-
-  static FirebaseAnalytics get analytics {
-    _analytics ??= FirebaseAnalytics.instance;
-    return _analytics!;
-  }
-
-  static FirebaseAnalyticsObserver get observer {
-    _observer ??= FirebaseAnalyticsObserver(analytics: analytics);
-    return _observer!;
-  }
 
   @override
   Future<void> initialize() async {
-    try {
-      await analytics.setAnalyticsCollectionEnabled(true);
-
-      if (kDebugMode) {
-        print('Firebase Analytics initialized successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to initialize Firebase Analytics: $e');
-      }
+    if (kDebugMode) {
+      print('FirebaseAnalyticsService: Disabled - Firebase not configured');
     }
   }
 
   @override
   Future<void> setUserId(String userId) async {
-    try {
-      await analytics.setUserId(id: userId);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to set user ID: $e');
-      }
+    if (kDebugMode) {
+      print('FirebaseAnalyticsService: setUserId disabled - Firebase not configured');
     }
   }
 
   @override
   Future<void> setUserProperty(String name, String? value) async {
-    try {
-      await analytics.setUserProperty(name: name, value: value);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to set user property: $e');
-      }
+    if (kDebugMode) {
+      print('FirebaseAnalyticsService: setUserProperty disabled - Firebase not configured');
     }
   }
 
@@ -58,26 +34,15 @@ class FirebaseAnalyticsService implements AnalyticsServiceInterface {
     required String screenName,
     String? screenClass,
   }) async {
-    try {
-      await analytics.logScreenView(
-        screenName: screenName,
-        screenClass: screenClass,
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to log screen view: $e');
-      }
+    if (kDebugMode) {
+      print('FirebaseAnalyticsService: setCurrentScreen disabled - Firebase not configured');
     }
   }
 
   @override
   Future<void> logEvent(String name, Map<String, Object>? parameters) async {
-    try {
-      await analytics.logEvent(name: name, parameters: parameters);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to log event: $e');
-      }
+    if (kDebugMode) {
+      print('FirebaseAnalyticsService: logEvent disabled - Firebase not configured');
     }
   }
 
@@ -315,3 +280,28 @@ class FirebaseAnalyticsService implements AnalyticsServiceInterface {
     await logEvent('app_foreground', {});
   }
 }
+
+/* ORIGINAL CODE - TO BE RESTORED WHEN FIREBASE IS CONFIGURED:
+
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/foundation.dart';
+import 'analytics_interface.dart';
+
+class FirebaseAnalyticsService implements AnalyticsServiceInterface {
+  static FirebaseAnalytics? _analytics;
+  static FirebaseAnalyticsObserver? _observer;
+
+  static FirebaseAnalytics get analytics {
+    _analytics ??= FirebaseAnalytics.instance;
+    return _analytics!;
+  }
+
+  static FirebaseAnalyticsObserver get observer {
+    _observer ??= FirebaseAnalyticsObserver(analytics: analytics);
+    return _observer!;
+  }
+
+  // ... rest of the original implementation
+}
+
+*/

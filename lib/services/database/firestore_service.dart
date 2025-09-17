@@ -1,4 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// Temporarily using local storage instead of Firestore due to Firebase configuration issues
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import '../../data/models/user_model.dart';
 
@@ -7,14 +9,17 @@ class FirestoreService {
   factory FirestoreService() => _instance;
   FirestoreService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  CollectionReference get _usersCollection => _firestore.collection('users');
-  CollectionReference get _interactionsCollection => _firestore.collection('interactions');
+  // Local storage keys
+  static const String _usersKey = 'firestore_users';
+  static const String _interactionsKey = 'firestore_interactions';
 
   Future<void> saveUserToDatabase(UserModel user) async {
     try {
-      await _usersCollection.doc(user.id).set({
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      users[user.id] = {
         'email': user.email,
         'name': user.name,
         'photoUrl': user.photoUrl,
@@ -22,19 +27,25 @@ class FirestoreService {
         'createdAt': user.createdAt.toIso8601String(),
         'lastLoginAt': DateTime.now().toIso8601String(),
         'platform': kIsWeb ? 'web' : 'mobile',
-      });
+      };
 
-      print('User saved to Firestore: ${user.email}');
+      await prefs.setString(_usersKey, jsonEncode(users));
+      print('User saved to local storage: ${user.email}');
     } catch (e) {
-      print('Error saving user to Firestore: $e');
+      print('Error saving user to local storage: $e');
     }
   }
 
   Future<void> updateUserLastLogin(String userId) async {
     try {
-      await _usersCollection.doc(userId).update({
-        'lastLoginAt': DateTime.now().toIso8601String(),
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      if (users.containsKey(userId)) {
+        users[userId]['lastLoginAt'] = DateTime.now().toIso8601String();
+        await prefs.setString(_usersKey, jsonEncode(users));
+      }
     } catch (e) {
       print('Error updating last login: $e');
     }
@@ -42,11 +53,14 @@ class FirestoreService {
 
   Future<UserModel?> getUserFromDatabase(String userId) async {
     try {
-      final doc = await _usersCollection.doc(userId).get();
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      if (users.containsKey(userId)) {
+        final data = users[userId];
         return UserModel(
-          id: doc.id,
+          id: userId,
           email: data['email'] ?? '',
           name: data['name'] ?? '',
           photoUrl: data['photoUrl'],
@@ -55,7 +69,7 @@ class FirestoreService {
         );
       }
     } catch (e) {
-      print('Error getting user from Firestore: $e');
+      print('Error getting user from local storage: $e');
     }
     return null;
   }
@@ -66,12 +80,17 @@ class FirestoreService {
     required Map<String, dynamic> details,
   }) async {
     try {
-      await _interactionsCollection.add({
+      final prefs = await SharedPreferences.getInstance();
+      final interactionsJson = prefs.getString(_interactionsKey) ?? '[]';
+      final interactions = List<Map<String, dynamic>>.from(jsonDecode(interactionsJson));
+
+      interactions.add({
+        'id': 'interaction_${DateTime.now().millisecondsSinceEpoch}',
         'userId': userId,
         'userEmail': details['userEmail'] ?? '',
         'action': action,
         'details': details,
-        'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': DateTime.now().toIso8601String(),
         'platform': kIsWeb ? 'web' : 'mobile',
         'deviceInfo': {
           'platform': defaultTargetPlatform.toString(),
@@ -79,6 +98,12 @@ class FirestoreService {
         },
       });
 
+      // Keep only last 1000 interactions to avoid storage issues
+      if (interactions.length > 1000) {
+        interactions.removeRange(0, interactions.length - 1000);
+      }
+
+      await prefs.setString(_interactionsKey, jsonEncode(interactions));
       print('Interaction tracked: $action for user $userId');
     } catch (e) {
       print('Error tracking interaction: $e');
@@ -87,17 +112,18 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> getUserInteractions(String userId, {int limit = 50}) async {
     try {
-      final querySnapshot = await _interactionsCollection
-          .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
-          .limit(limit)
-          .get();
+      final prefs = await SharedPreferences.getInstance();
+      final interactionsJson = prefs.getString(_interactionsKey) ?? '[]';
+      final allInteractions = List<Map<String, dynamic>>.from(jsonDecode(interactionsJson));
 
-      return querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
+      // Filter by userId and sort by timestamp
+      final userInteractions = allInteractions
+          .where((interaction) => interaction['userId'] == userId)
+          .toList()
+          ..sort((a, b) => DateTime.parse(b['timestamp']).compareTo(DateTime.parse(a['timestamp'])));
+
+      // Apply limit
+      return userInteractions.take(limit).toList();
     } catch (e) {
       print('Error getting user interactions: $e');
       return [];
@@ -105,40 +131,42 @@ class FirestoreService {
   }
 
   Stream<List<Map<String, dynamic>>> streamUserInteractions(String userId) {
-    return _interactionsCollection
-        .where('userId', isEqualTo: userId)
-        .orderBy('timestamp', descending: true)
-        .limit(50)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
-    });
+    // Create a stream that emits the current interactions and updates periodically
+    return Stream.periodic(const Duration(seconds: 5), (i) async {
+      return await getUserInteractions(userId);
+    }).asyncMap((future) => future);
   }
 
   Future<Map<String, dynamic>> getUserStats(String userId) async {
     try {
-      final querySnapshot = await _interactionsCollection
-          .where('userId', isEqualTo: userId)
-          .get();
+      final prefs = await SharedPreferences.getInstance();
+      final interactionsJson = prefs.getString(_interactionsKey) ?? '[]';
+      final allInteractions = List<Map<String, dynamic>>.from(jsonDecode(interactionsJson));
 
-      final interactions = querySnapshot.docs;
+      // Filter by userId
+      final userInteractions = allInteractions
+          .where((interaction) => interaction['userId'] == userId)
+          .toList();
+
       final actionCounts = <String, int>{};
 
-      for (final doc in interactions) {
-        final action = (doc.data() as Map<String, dynamic>)['action'] as String;
+      for (final interaction in userInteractions) {
+        final action = interaction['action'] as String;
         actionCounts[action] = (actionCounts[action] ?? 0) + 1;
       }
 
+      DateTime? lastInteractionTime;
+      if (userInteractions.isNotEmpty) {
+        // Sort to get the most recent
+        userInteractions.sort((a, b) =>
+          DateTime.parse(b['timestamp']).compareTo(DateTime.parse(a['timestamp'])));
+        lastInteractionTime = DateTime.parse(userInteractions.first['timestamp']);
+      }
+
       return {
-        'totalInteractions': interactions.length,
+        'totalInteractions': userInteractions.length,
         'actionCounts': actionCounts,
-        'lastInteraction': interactions.isNotEmpty
-            ? (interactions.first.data() as Map<String, dynamic>)['timestamp']
-            : null,
+        'lastInteraction': lastInteractionTime?.toIso8601String(),
       };
     } catch (e) {
       print('Error getting user stats: $e');
@@ -153,14 +181,19 @@ class FirestoreService {
   /// Update user photo URL
   Future<void> updateUserPhotoUrl(String userId, String photoUrl) async {
     try {
-      await _usersCollection.doc(userId).update({
-        'photoUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      print('User photo URL updated in Firestore');
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey) ?? '{}';
+      final users = Map<String, dynamic>.from(jsonDecode(usersJson));
+
+      if (users.containsKey(userId)) {
+        users[userId]['photoUrl'] = photoUrl;
+        users[userId]['updatedAt'] = DateTime.now().toIso8601String();
+        await prefs.setString(_usersKey, jsonEncode(users));
+        print('User photo URL updated in local storage');
+      }
     } catch (e) {
       print('Error updating user photo URL: $e');
-      throw e;
+      rethrow;
     }
   }
 }

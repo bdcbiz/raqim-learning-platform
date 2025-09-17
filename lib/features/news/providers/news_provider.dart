@@ -7,17 +7,32 @@ import '../../../services/database/database_service.dart';
 
 class NewsProvider extends ChangeNotifier {
   List<NewsModel> _news = [];
+  List<NewsModel> _allNews = []; // لحفظ جميع الأخبار قبل التصفية
   bool _isLoading = false;
   String? _error;
   String _selectedCategory = 'الكل';
+  String _searchQuery = '';
   String? _selectedNewsId; // المتغير الجديد لتتبع الخبر المحدد
   final DatabaseService _databaseService = DatabaseService();
 
   List<NewsModel> get news {
-    if (_selectedCategory == 'الكل') {
-      return _news;
+    var filteredNews = _allNews;
+
+    // تطبيق فلتر الفئة
+    if (_selectedCategory != 'الكل') {
+      filteredNews = filteredNews.where((n) => n.category == _selectedCategory).toList();
     }
-    return _news.where((n) => n.category == _selectedCategory).toList();
+
+    // تطبيق فلتر البحث
+    if (_searchQuery.isNotEmpty) {
+      filteredNews = filteredNews.where((n) =>
+        n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        n.description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        n.source.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+
+    return filteredNews;
   }
 
   bool get isLoading => _isLoading;
@@ -46,7 +61,8 @@ class NewsProvider extends ChangeNotifier {
     try {
       // For demo purposes, using mock data
       await Future.delayed(const Duration(seconds: 1));
-      _news = _generateMockNews();
+      _allNews = _generateMockNews();
+      _news = _allNews;
       
       /* Uncomment for real API integration
       final response = await http.get(
@@ -73,6 +89,11 @@ class NewsProvider extends ChangeNotifier {
 
   void setCategory(String category) {
     _selectedCategory = category;
+    notifyListeners();
+  }
+
+  void searchNews(String query) {
+    _searchQuery = query;
     notifyListeners();
   }
 

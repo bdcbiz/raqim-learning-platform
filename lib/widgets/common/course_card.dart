@@ -120,8 +120,8 @@ class CourseCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: price == 'مجاني'
-                              ? Colors.green.withOpacity(0.1)
-                              : AppColors.primaryColor.withOpacity(0.1),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : AppColors.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

@@ -35,7 +35,7 @@ class ModernCourseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -80,7 +80,7 @@ class ModernCourseCard extends StatelessWidget {
                       category,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -89,9 +89,9 @@ class ModernCourseCard extends StatelessWidget {
               ],
             ),
             // Content
-            Flexible(
+            Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -102,79 +102,93 @@ class ModernCourseCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1F2937),
                         height: 1.3,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 4),
                     // Instructor
                     Text(
                       instructor,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         color: Colors.grey[600],
                         height: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 8),
                     // Stats row
-                    Row(
-                      children: [
-                        // Students count
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 14,
-                              color: Colors.grey[600],
+                    Flexible(
+                      child: Row(
+                        children: [
+                          // Students count
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.people_outline,
+                                  size: 12,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 2),
+                                Flexible(
+                                  child: Text(
+                                    '$studentsCount+',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 3),
-                            Text(
-                              '$studentsCount+',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 8),
-                        // Rating
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              size: 14,
-                              color: Color(0xFFFFB800),
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              rating.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        // Price
-                        Text(
-                          price,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: price == 'مجاني'
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF6366F1),
-                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          // Rating
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  size: 12,
+                                  color: Color(0xFFFFB800),
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  rating.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          // Price
+                          Flexible(
+                            child: Text(
+                              price,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: price == 'مجاني'
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFF6366F1),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

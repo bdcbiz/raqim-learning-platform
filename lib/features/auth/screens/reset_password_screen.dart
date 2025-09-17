@@ -132,7 +132,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -187,8 +187,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primaryColor.withOpacity(0.1),
-                          AppColors.primaryColor.withOpacity(0.05),
+                          AppColors.primaryColor.withValues(alpha: 0.1),
+                          AppColors.primaryColor.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -427,7 +427,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.8),
+                    AppColors.primaryColor.withValues(alpha: 0.8),
                     AppColors.primaryColor,
                   ],
                 ),
@@ -442,7 +442,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                       height: 150,
                       width: 150,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
@@ -490,7 +490,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with SingleTi
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: isWideScreen ? 18 : 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),

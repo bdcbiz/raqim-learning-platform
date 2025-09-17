@@ -288,6 +288,27 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateUserName(String name) async {
+    if (_currentUser != null && name.trim().isNotEmpty) {
+      // Update the current user model with new name
+      _currentUser = UserModel(
+        id: _currentUser!.id,
+        email: _currentUser!.email,
+        name: name.trim(),
+        photoUrl: _currentUser!.photoUrl,
+        bio: _currentUser!.bio,
+        createdAt: _currentUser!.createdAt,
+      );
+
+      // Save to SharedPreferences
+      await _saveUser();
+      // Update cache
+      await CacheService.cacheUserData(_currentUser!);
+
+      notifyListeners();
+    }
+  }
+
   Future<void> _saveUser() async {
     if (_currentUser != null) {
       await _prefs.setString('userId', _currentUser!.id);
