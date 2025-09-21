@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../widgets/common/raqim_app_bar.dart';
 
 class JobOffer {
   final String id;
@@ -183,102 +184,48 @@ class _JobsListScreenState extends State<JobsListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
-      appBar: AppBar(
-        title: Text(
-          'فرص العمل',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: const RaqimAppBar(
+        title: 'فرص العمل',
       ),
-      body: Column(
-        children: [
-          // Search and Filter Section
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) => _filterJobs(),
-                  decoration: InputDecoration(
-                    hintText: 'ابحث عن وظيفة...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              _filterJobs();
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primaryColor),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip('الكل'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('دوام كامل'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('دوام جزئي'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('عاجل'),
-                    ],
-                  ),
-                ),
-              ],
+      body: CustomScrollView(
+        slivers: [
+          // Search and Filter Section - Pinned
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SearchFilterDelegate(
+              searchController: _searchController,
+              selectedFilter: _selectedFilter,
+              onSearchChanged: _filterJobs,
+              onFilterChanged: (filter) {
+                setState(() {
+                  _selectedFilter = filter;
+                });
+                _filterJobs();
+              },
+              buildFilterChip: _buildFilterChip,
             ),
           ),
 
           // Results Count
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.grey[50],
-            child: Text(
-              'تم العثور على ${_filteredJobs.length} وظيفة',
-              style: AppTextStyles.body.copyWith(
-                color: Colors.grey[600],
-                fontSize: 14,
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey[50],
+              child: Text(
+                'تم العثور على ${_filteredJobs.length} وظيفة',
+                style: AppTextStyles.body.copyWith(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
 
           // Jobs List
-          Expanded(
-            child: _filteredJobs.isEmpty
-                ? Center(
+          _filteredJobs.isEmpty
+              ? SliverFillRemaining(
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -303,11 +250,11 @@ class _JobsListScreenState extends State<JobsListScreen> {
                         ),
                       ],
                     ),
-                  )
-                : isWideScreen
-                    ? _buildDesktopLayout()
-                    : _buildMobileLayout(),
-          ),
+                  ),
+                )
+              : isWideScreen
+                  ? _buildDesktopSliverLayout()
+                  : _buildMobileSliverLayout(),
         ],
       ),
     );
@@ -338,6 +285,42 @@ class _JobsListScreenState extends State<JobsListScreen> {
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             fontSize: 14,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopSliverLayout() {
+    return SliverPadding(
+      padding: const EdgeInsets.all(24),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 1.8,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final job = _filteredJobs[index];
+            return _buildJobCard(job);
+          },
+          childCount: _filteredJobs.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileSliverLayout() {
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final job = _filteredJobs[index];
+            return _buildJobCard(job);
+          },
+          childCount: _filteredJobs.length,
         ),
       ),
     );
@@ -530,30 +513,73 @@ class _JobsListScreenState extends State<JobsListScreen> {
   }
 
   Widget _buildDetailSection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: AppTextStyles.h3.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.inputBackground,
+          width: 1,
         ),
-        const SizedBox(height: 8),
-        Text(
-          content,
-          style: AppTextStyles.body.copyWith(
-            height: 1.6,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
-        const SizedBox(height: 20),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _getIconForSection(title),
+                color: AppColors.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: AppTextStyles.h3.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            content,
+            style: AppTextStyles.body.copyWith(
+              height: 1.6,
+              color: AppColors.secondaryText,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  IconData _getIconForSection(String title) {
+    switch (title) {
+      case 'الوصف':
+        return Icons.description_outlined;
+      case 'المتطلبات':
+        return Icons.checklist_outlined;
+      case 'المزايا':
+        return Icons.star_outline;
+      default:
+        return Icons.info_outline;
+    }
   }
 
   Widget _buildJobCard(JobOffer job) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -571,7 +597,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
           onTap: () => _showJobDetails(job),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -736,5 +762,107 @@ class _JobsListScreenState extends State<JobsListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+}
+
+class _SearchFilterDelegate extends SliverPersistentHeaderDelegate {
+  final TextEditingController searchController;
+  final String selectedFilter;
+  final VoidCallback onSearchChanged;
+  final Function(String) onFilterChanged;
+  final Widget Function(String) buildFilterChip;
+
+  _SearchFilterDelegate({
+    required this.searchController,
+    required this.selectedFilter,
+    required this.onSearchChanged,
+    required this.onFilterChanged,
+    required this.buildFilterChip,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Material(
+      color: Colors.white,
+      elevation: shrinkOffset > 0 ? 4 : 0,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Search Bar
+            TextField(
+              controller: searchController,
+              onChanged: (value) => onSearchChanged(),
+              decoration: InputDecoration(
+                hintText: 'ابحث عن وظيفة...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          searchController.clear();
+                          onSearchChanged();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primaryColor),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Filter Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => onFilterChanged('الكل'),
+                    child: buildFilterChip('الكل'),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => onFilterChanged('دوام كامل'),
+                    child: buildFilterChip('دوام كامل'),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => onFilterChanged('دوام جزئي'),
+                    child: buildFilterChip('دوام جزئي'),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => onFilterChanged('عاجل'),
+                    child: buildFilterChip('عاجل'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 140;
+
+  @override
+  double get minExtent => 140;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return oldDelegate != this;
   }
 }

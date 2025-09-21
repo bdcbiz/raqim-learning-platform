@@ -6,7 +6,7 @@ import '../providers/news_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
+import '../../../widgets/common/raqim_app_bar.dart';
 
 class NewsFeedScreen extends StatelessWidget {
   const NewsFeedScreen({super.key});
@@ -103,53 +103,52 @@ class NewsFeedScreen extends StatelessWidget {
   Widget _buildDesktopLayout(BuildContext context, NewsProvider newsProvider) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: RaqimAppBar(
-        title: AppLocalizations.of(context)?.translate('newsTitle') ?? 'الأخبار',
-        backgroundColor: Colors.white,
-        titleColor: AppColors.primaryColor,
-        logoColor: AppColors.primaryColor,
-        showBackButton: false,
-        actions: [
-          // Search bar only
-          Container(
-            width: 300,
-            height: 40,
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F0F0),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TextField(
-              onChanged: (value) {
-                newsProvider.searchNews(value);
-              },
-              decoration: InputDecoration(
-                hintText: 'ابحث عن الأخبار...',
-                hintStyle: AppTextStyles.small.copyWith(
-                  color: Colors.grey[500],
-                ),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-            ),
-          ),
-        ],
+      appBar: const RaqimAppBar(
+        title: 'الأخبار',
       ),
       body: newsProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Categories as horizontal chips
+                // Search bar and categories
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.all(24),
                   color: Colors.white,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _buildHorizontalCategoryChips(newsProvider, context),
-                    ),
+                  child: Column(
+                    children: [
+                      // Search bar
+                      Container(
+                        width: 400,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextField(
+                          onChanged: (value) {
+                            newsProvider.searchNews(value);
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'ابحث عن الأخبار...',
+                            hintStyle: AppTextStyles.small.copyWith(
+                              color: Colors.grey[500],
+                            ),
+                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Categories as horizontal chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _buildHorizontalCategoryChips(newsProvider, context),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 // Main Content
@@ -173,12 +172,8 @@ class NewsFeedScreen extends StatelessWidget {
   Widget _buildMobileLayout(BuildContext context, NewsProvider newsProvider) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: RaqimAppBar(
-        title: AppLocalizations.of(context)?.translate('newsTitle') ?? 'الأخبار',
-        backgroundColor: Colors.white,
-        titleColor: AppColors.primaryColor,
-        logoColor: AppColors.primaryColor,
-        showBackButton: false,
+      appBar: const RaqimAppBar(
+        title: 'الأخبار',
       ),
       body: newsProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -276,7 +271,7 @@ class NewsFeedScreen extends StatelessWidget {
               style: AppTextStyles.small.copyWith(
                 color: isSelected ? Colors.white : const Color(0xFF666666),
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
+                fontSize: 12,
               ),
             ),
           ),
@@ -511,26 +506,11 @@ class NewsFeedScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'أخبار ذات صلة',
-              style: AppTextStyles.h3.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: Text(
-                'عرض الكل',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+        Text(
+          'أخبار ذات صلة',
+          style: AppTextStyles.h3.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 16),
         ...relatedNews.map((article) => _buildRelatedNewsCard(context, article, newsProvider)).toList(),
@@ -658,6 +638,7 @@ class NewsFeedScreen extends StatelessWidget {
                     _getLocalizedNewsTitle(article, context),
                     style: AppTextStyles.cardTitle.copyWith(
                       height: 1.3,
+                      fontSize: 16,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -668,6 +649,7 @@ class NewsFeedScreen extends StatelessWidget {
                     style: AppTextStyles.body.copyWith(
                       color: Colors.grey[600],
                       height: 1.4,
+                      fontSize: 13,
                     ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
@@ -681,12 +663,14 @@ class NewsFeedScreen extends StatelessWidget {
                         style: AppTextStyles.small.copyWith(
                           color: Colors.grey[600],
                           fontWeight: FontWeight.bold,
+                          fontSize: 11,
                         ),
                       ),
                       Text(
                         _formatDate(article.publishedAt, context),
                         style: AppTextStyles.small.copyWith(
                           color: Colors.grey[600],
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -716,6 +700,7 @@ class NewsFeedScreen extends StatelessWidget {
                                 '${article.likesCount}',
                                 style: AppTextStyles.small.copyWith(
                                   color: article.isLiked ? Colors.red : Colors.grey[600],
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -741,6 +726,7 @@ class NewsFeedScreen extends StatelessWidget {
                                 '${article.commentsCount}',
                                 style: AppTextStyles.small.copyWith(
                                   color: Colors.grey[600],
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -853,12 +839,24 @@ class NewsFeedScreen extends StatelessWidget {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Colors.grey[300],
-                                      child: comment.authorAvatar != null
-                                          ? ClipOval(child: Image.network(comment.authorAvatar!))
-                                          : Text(comment.authorName[0].toUpperCase()),
+                                    Consumer<AuthProvider>(
+                                      builder: (context, authProvider, child) {
+                                        final currentUser = authProvider.currentUser;
+                                        final isCurrentUserComment = currentUser != null &&
+                                            comment.authorName == currentUser.name;
+
+                                        final photoUrl = isCurrentUserComment && currentUser.photoUrl != null
+                                            ? currentUser.photoUrl
+                                            : comment.authorAvatar;
+
+                                        return CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: Colors.grey[300],
+                                          child: photoUrl != null
+                                              ? ClipOval(child: Image.network(photoUrl!))
+                                              : Text(comment.authorName[0].toUpperCase()),
+                                        );
+                                      },
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(

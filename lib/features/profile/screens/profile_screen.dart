@@ -11,6 +11,7 @@ import '../../../services/auth/auth_interface.dart';
 import '../../../services/auth/web_auth_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../widgets/common/raqim_app_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -272,7 +273,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         try {
           print('DEBUG: Processing base64 image');
           // Extract the base64 part from the data URL
-          final base64String = user.photoUrl.split(',')[1];
+          final parts = user.photoUrl.split(',');
+          if (parts.length < 2) {
+            print('DEBUG: Invalid data URL format');
+            return _buildDefaultAvatar(user);
+          }
+          final base64String = parts[1];
           final imageBytes = base64Decode(base64String);
           print('DEBUG: Decoded ${imageBytes.length} bytes');
 
@@ -596,12 +602,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      appBar: const RaqimAppBar(
+        title: 'الملف الشخصي',
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Profile Header Section
             Container(
-              color: Colors.white,
+              color: Colors.transparent,
               padding: const EdgeInsets.symmetric(vertical: 32),
               child: Column(
                 children: [

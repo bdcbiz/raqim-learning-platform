@@ -16,6 +16,7 @@ import '../../../widgets/common/advertisements_carousel.dart';
 import '../../../providers/course_provider.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../jobs/screens/jobs_list_screen.dart';
+import '../../../widgets/common/raqim_app_bar.dart';
 
 // Simple JobOffer class for local use
 class JobOffer {
@@ -103,10 +104,27 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      appBar: RaqimAppBar(
+        title: 'الرئيسية',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.go('/settings'),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        bottom: false,
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 80),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               // Welcome Header - Reactive to auth changes
               Consumer<AuthProvider>(
                 builder: (context, authProvider, child) {
@@ -211,7 +229,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                     itemBuilder: (context, index) {
                       final category = _categories[index];
                       return Container(
-                        constraints: const BoxConstraints(minWidth: 80),
+                        constraints: const BoxConstraints(minWidth: 60),
                         child: PillButton(
                           text: category,
                           isSelected: category == _selectedCategory,
@@ -322,8 +340,9 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                 child: _buildJobOffers(),
               ),
 
-              const SizedBox(height: 100), // Space for bottom navigation
-          ],
+              const SizedBox(height: 20), // Bottom padding already added in ScrollView
+            ],
+          ),
         ),
       ),
     );
@@ -368,8 +387,8 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
       }).toList();
     }
 
-    // If no courses at all, show sample courses
-    if (allCourses.isEmpty) {
+    // If no courses at all or too few courses, show sample courses
+    if (allCourses.isEmpty || allCourses.length < 6) {
       return _buildSampleCoursesGrid();
     }
 
@@ -400,8 +419,8 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
       );
     }
 
-    // Show only first 8 courses as "popular" courses
-    final popularCourses = filteredCourses.take(8).toList();
+    // Show only first 6 courses as "popular" courses (to prevent too many showing then disappearing)
+    final popularCourses = filteredCourses.take(6).toList();
 
     // Horizontal scrolling list with larger cards (same as sample courses)
     final screenWidth = MediaQuery.of(context).size.width;
@@ -421,7 +440,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
           return Container(
             width: isMobile ? screenWidth * 0.85 : isTablet ? 280 : 300,
             margin: EdgeInsets.only(
-              left: index == popularCourses.length - 1 ? 16 : isMobile ? 12 : 8,
+              left: index == popularCourses.length - 1 ? 16 : 16,
             ),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -505,39 +524,6 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         'rating': 4.7,
         'category': 'علم البيانات',
       },
-      {
-        'id': 'sample-python-101',
-        'title': 'برمجة Python للذكاء الاصطناعي',
-        'instructor': 'م. فاطمة أحمد',
-        'image': 'https://picsum.photos/400/300?random=26',
-        'lessons': 30,
-        'duration': '20 ساعة',
-        'price': '399 ريال',
-        'rating': 4.9,
-        'category': 'البرمجة',
-      },
-      {
-        'id': 'sample-ai-gen-101',
-        'title': 'الذكاء الاصطناعي التوليدي',
-        'instructor': 'د. سلمى خالد',
-        'image': 'https://picsum.photos/400/300?random=27',
-        'lessons': 16,
-        'duration': '10 ساعة',
-        'price': '599 ريال',
-        'rating': 4.8,
-        'category': 'الذكاء التوليدي',
-      },
-      {
-        'id': 'sample-business-101',
-        'title': 'الذكاء الاصطناعي في الأعمال',
-        'instructor': 'أ. حسام الدين',
-        'image': 'https://picsum.photos/400/300?random=28',
-        'lessons': 12,
-        'duration': '8 ساعة',
-        'price': '249 ريال',
-        'rating': 4.5,
-        'category': 'الأعمال',
-      },
     ];
 
     // Filter sample courses based on selected category
@@ -590,7 +576,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
           return Container(
             width: isMobile ? screenWidth * 0.85 : isTablet ? 280 : 300,
             margin: EdgeInsets.only(
-              right: index == filteredSampleCourses.length - 1 ? 0 : isMobile ? 12 : 8,
+              right: index == filteredSampleCourses.length - 1 ? 16 : 16,
             ),
             child: AnimatedCourseCard(
               title: course['title'] as String,
@@ -961,14 +947,15 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
 
   Widget _buildJobCard(JobOffer job) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -986,160 +973,160 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
             // Show job details dialog or navigate to job details screen
             _showJobDetailsDialog(context, job);
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: AppColors.inputBackground,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          job.companyLogo,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.business,
-                                color: AppColors.primaryColor,
-                                size: 25,
-                              ),
-                            );
-                          },
-                        ),
+                // Company Logo - Circle with first letter
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF2B3990),
+                        const Color(0xFF4A5EC1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      job.company.isNotEmpty ? job.company[0] : 'C',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Job Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Job Title
+                      Text(
+                        job.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Company Name
+                      Text(
+                        job.company,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Location Row
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  job.title,
-                                  style: AppTextStyles.h3.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (job.isUrgent)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    'عاجل',
-                                    style: AppTextStyles.small.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 16,
+                            color: Color(0xFF757575),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(width: 4),
                           Text(
-                            job.company,
-                            style: AppTextStyles.body.copyWith(
-                              color: AppColors.primaryColor,
-                              fontWeight: FontWeight.w600,
+                            job.location,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF757575),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on_outlined,
-                                size: 14,
-                                color: Colors.grey[600],
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  job.location,
-                                  style: AppTextStyles.small.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  job.jobType,
-                                  style: AppTextStyles.small.copyWith(
-                                    color: AppColors.primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.attach_money,
-                      size: 16,
-                      color: Colors.green[600],
-                    ),
-                    Expanded(
-                      child: Text(
-                        job.salary,
-                        style: AppTextStyles.body.copyWith(
-                          color: Colors.green[600],
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 16),
+                      // Bottom Row - Tags and Salary
+                      Row(
+                        children: [
+                          // Job Type Tag
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F4FD),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                job.jobType,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF2196F3),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Experience Tag
+                          if (!job.experience.contains('1') && !job.experience.contains('مبتدئ'))
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3E5F5),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  job.experience,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF9C27B0),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          const Spacer(),
+                          // Salary
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: RichText(
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: job.salary.split(' ')[0],
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: '/شهر',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF757575),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        'الخبرة: ${job.experience}',
-                        style: AppTextStyles.small.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

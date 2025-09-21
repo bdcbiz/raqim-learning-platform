@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/app_settings_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
+import '../../../widgets/common/raqim_app_bar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -15,8 +15,8 @@ class SettingsScreen extends StatelessWidget {
     // Light mode only - dark mode removed as per requirements
     
     return Scaffold(
-      appBar: RaqimAppBar(
-        title: localizations?.translate('settings') ?? 'الإعدادات',
+      appBar: const RaqimAppBar(
+        title: 'الإعدادات',
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -74,7 +74,27 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
+              // Notifications Section
+              Text(
+                localizations?.translate('notifications') ?? 'الإشعارات',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.grey[200]!,
+                  ),
+                ),
+                child: _buildNotificationToggle(context, settingsProvider),
+              ),
+              const SizedBox(height: 32),
+
               // About Section
               Container(
                 padding: const EdgeInsets.all(20),
@@ -206,4 +226,75 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildNotificationToggle(
+    BuildContext context,
+    AppSettingsProvider settingsProvider,
+  ) {
+    final localizations = AppLocalizations.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.notifications_outlined,
+              color: AppColors.primaryColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  localizations?.translate('enableNotifications') ?? 'تفعيل الإشعارات',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  localizations?.translate('receiveNotificationsDescription') ??
+                  'استلام إشعارات الدورات والتحديثات الجديدة',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(
+            value: settingsProvider.notificationsEnabled,
+            onChanged: (value) {
+              settingsProvider.toggleNotifications();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    value
+                      ? (localizations?.translate('notificationsEnabled') ?? 'تم تفعيل الإشعارات')
+                      : (localizations?.translate('notificationsDisabled') ?? 'تم إلغاء تفعيل الإشعارات'),
+                  ),
+                  backgroundColor: AppColors.primaryColor,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            activeColor: AppColors.primaryColor,
+            activeTrackColor: AppColors.primaryColor.withValues(alpha: 0.3),
+            inactiveThumbColor: Colors.grey[400],
+            inactiveTrackColor: Colors.grey[300],
+          ),
+        ],
+      ),
+    );
+  }
 }
