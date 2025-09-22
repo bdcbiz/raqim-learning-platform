@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/courses_provider.dart';
 import '../../certificates/providers/certificates_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
@@ -43,8 +43,29 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     }).toList();
 
     return Scaffold(
-      appBar: RaqimAppBar(
-        title: AppLocalizations.of(context)?.translate('myCoursesTitle') ?? 'My Courses',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          'دوراتي',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Column(
         children: [

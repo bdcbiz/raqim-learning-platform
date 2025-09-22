@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/news_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../widgets/common/raqim_app_bar.dart';
 
 class NewsFeedScreen extends StatelessWidget {
   const NewsFeedScreen({super.key});
@@ -102,10 +102,31 @@ class NewsFeedScreen extends StatelessWidget {
 
   Widget _buildDesktopLayout(BuildContext context, NewsProvider newsProvider) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: const RaqimAppBar(
-        title: 'الأخبار',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          'الأخبار',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      backgroundColor: const Color(0xFFF8F9FA),
       body: newsProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -171,10 +192,31 @@ class NewsFeedScreen extends StatelessWidget {
 
   Widget _buildMobileLayout(BuildContext context, NewsProvider newsProvider) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: const RaqimAppBar(
-        title: 'الأخبار',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          'الأخبار',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      backgroundColor: const Color(0xFFF8F9FA),
       body: newsProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/course_provider.dart';
 import '../widgets/common/animated_course_card.dart';
 import '../widgets/common/modern_course_card.dart' show ModernCourseCard;
 import 'course_detail_screen.dart';
-import '../core/widgets/raqim_app_bar.dart';
+import '../core/theme/app_theme.dart';
 
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});
@@ -28,10 +29,31 @@ class _CoursesScreenState extends State<CoursesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: const RaqimAppBar(
-        title: 'جميع الدورات',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          'الدورات',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      backgroundColor: Colors.grey[50],
       body: Consumer<CourseProvider>(
         builder: (context, courseProvider, child) {
           if (courseProvider.isLoading) {

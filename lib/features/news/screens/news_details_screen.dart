@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/news_provider.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
+import '../../../core/theme/app_theme.dart';
 
 class NewsDetailsScreen extends StatefulWidget {
   final String newsId;
@@ -29,10 +29,31 @@ class _NewsDetailsScreenState extends State<NewsDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: const RaqimAppBar(
-        title: 'تفاصيل الخبر',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          'تفاصيل الخبر',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      backgroundColor: Colors.grey[100],
       body: Consumer<NewsProvider>(
         builder: (context, provider, child) {
           final article = provider.news.firstWhere(

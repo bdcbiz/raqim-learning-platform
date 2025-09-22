@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../courses/providers/courses_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -16,7 +17,6 @@ import '../../../widgets/common/advertisements_carousel.dart';
 import '../../../providers/course_provider.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../jobs/screens/jobs_list_screen.dart';
-import '../../../widgets/common/raqim_app_bar.dart';
 
 // Simple JobOffer class for local use
 class JobOffer {
@@ -103,20 +103,31 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
     final courseProvider = Provider.of<CourseProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBackground,
-      appBar: RaqimAppBar(
-        title: 'الرئيسية',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.go('/settings'),
+        ),
+        title: Text(
+          'الرئيسية',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
           ),
-        ],
+        ),
       ),
+      backgroundColor: AppColors.primaryBackground,
       body: SafeArea(
         bottom: false,
         top: false,

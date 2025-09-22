@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -11,7 +12,7 @@ import '../../../services/auth/auth_interface.dart';
 import '../../../services/auth/web_auth_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../widgets/common/raqim_app_bar.dart';
+import '../../../core/providers/app_settings_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -587,6 +588,291 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 24, bottom: 12, left: 16, right: 16),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primaryColor,
+        ),
+      ),
+    );
+  }
+
+  // Dialog Methods
+  void _showLanguageDialog(BuildContext context, AppSettingsProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('اختر اللغة', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.language, color: AppColors.primaryColor),
+              ),
+              title: const Text('العربية'),
+              trailing: provider.isArabic ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setLocale(const Locale('ar', 'SA'));
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.language, color: AppColors.primaryColor),
+              ),
+              title: const Text('English'),
+              trailing: !provider.isArabic ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setLocale(const Locale('en', 'US'));
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showVideoSpeedDialog(BuildContext context, AppSettingsProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('سرعة تشغيل الفيديو', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) =>
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.speed, color: AppColors.primaryColor),
+              ),
+              title: Text('${speed}x'),
+              trailing: provider.videoSpeed == speed ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setVideoSpeed(speed);
+                Navigator.pop(context);
+              },
+            ),
+          ).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showFontSizeDialog(BuildContext context, AppSettingsProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('حجم الخط', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: ['small', 'medium', 'large', 'extra_large'].map((size) =>
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.text_fields, color: AppColors.primaryColor),
+              ),
+              title: Text(_getFontSizeLabel(size)),
+              trailing: provider.fontSize == size ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setFontSize(size);
+                Navigator.pop(context);
+              },
+            ),
+          ).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showProfileVisibilityDialog(BuildContext context, AppSettingsProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('رؤية الملف الشخصي', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.visibility, color: AppColors.primaryColor),
+              ),
+              title: const Text('عام - يمكن للجميع رؤيته'),
+              trailing: provider.profileVisibility == 'public' ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setProfileVisibility('public');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.visibility_off, color: AppColors.primaryColor),
+              ),
+              title: const Text('خاص - للأصدقاء فقط'),
+              trailing: provider.profileVisibility == 'private' ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setProfileVisibility('private');
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRegionalContentDialog(BuildContext context, AppSettingsProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('المحتوى الإقليمي', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: ['global', 'saudi', 'egypt', 'uae', 'other'].map((region) =>
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.public, color: AppColors.primaryColor),
+              ),
+              title: Text(_getRegionalContentLabel(region)),
+              trailing: provider.regionalContent == region ? Icon(Icons.check, color: AppColors.primaryColor) : null,
+              onTap: () {
+                provider.setRegionalContent(region);
+                Navigator.pop(context);
+              },
+            ),
+          ).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showClearCacheDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('مسح التخزين المؤقت', textAlign: TextAlign.center),
+        content: const Text('هل تريد مسح جميع الملفات المؤقتة؟ سيؤدي هذا إلى تحرير مساحة تخزين.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('تم مسح التخزين المؤقت'),
+                  backgroundColor: AppColors.primaryColor,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+            child: const Text('مسح', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExportDataDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('تصدير البيانات', textAlign: TextAlign.center),
+        content: const Text('سيتم تصدير جميع بياناتك الشخصية وتقدمك في الدورات.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('جاري تصدير البيانات...'),
+                  backgroundColor: AppColors.primaryColor,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+            child: const Text('تصدير', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper Methods
+  String _getFontSizeLabel(String size) {
+    switch (size) {
+      case 'small': return 'صغير';
+      case 'medium': return 'متوسط';
+      case 'large': return 'كبير';
+      case 'extra_large': return 'كبير جداً';
+      default: return 'متوسط';
+    }
+  }
+
+  String _getRegionalContentLabel(String region) {
+    switch (region) {
+      case 'global': return 'عالمي';
+      case 'saudi': return 'السعودية';
+      case 'egypt': return 'مصر';
+      case 'uae': return 'الإمارات';
+      case 'other': return 'أخرى';
+      default: return 'عالمي';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Try to get user from WebAuthService first (for web)
@@ -601,10 +887,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     print('DEBUG: Using user with photoUrl: ${user?.photoUrl?.substring(0, math.min(100, user.photoUrl?.length ?? 0)) ?? 'null'}');
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: const RaqimAppBar(
-        title: 'الملف الشخصي',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 28,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          'الملف الشخصي',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      backgroundColor: Colors.grey[50],
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -688,21 +995,324 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
+                  // Profile Settings
                   _buildSettingItem(
                     icon: Icons.person_outline,
                     title: 'تعديل الملف الشخصي',
                     onTap: () => _showEditProfileDialog(context, user),
                   ),
-                  _buildSettingItem(
-                    icon: Icons.notifications_outlined,
-                    title: 'الإشعارات',
-                    trailing: Switch(
-                      value: true,
-                      onChanged: (value) {
-                        // TODO: Implement notification settings
-                      },
-                      activeColor: AppColors.primaryColor,
-                    ),
+
+                  // Language Settings
+                  _buildSectionTitle('اللغة'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return _buildSettingItem(
+                        icon: Icons.language,
+                        title: 'اللغة',
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              settingsProvider.isArabic ? 'العربية' : 'English',
+                              style: TextStyle(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.chevron_right, color: Colors.grey[400]),
+                          ],
+                        ),
+                        onTap: () => _showLanguageDialog(context, settingsProvider),
+                      );
+                    },
+                  ),
+
+                  // Learning & Course Settings
+                  _buildSectionTitle('إعدادات التعلم والدورات'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: Icons.play_circle_outline,
+                            title: 'تشغيل تلقائي للدرس التالي',
+                            trailing: Switch(
+                              value: settingsProvider.autoPlayNext,
+                              onChanged: settingsProvider.setAutoPlayNext,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.speed,
+                            title: 'سرعة تشغيل الفيديو',
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${settingsProvider.videoSpeed}x',
+                                  style: TextStyle(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                              ],
+                            ),
+                            onTap: () => _showVideoSpeedDialog(context, settingsProvider),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.save,
+                            title: 'حفظ التقدم تلقائياً',
+                            trailing: Switch(
+                              value: settingsProvider.autoSaveProgress,
+                              onChanged: settingsProvider.setAutoSaveProgress,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.download,
+                            title: 'التحميل للمشاهدة بدون إنترنت',
+                            trailing: Switch(
+                              value: settingsProvider.offlineDownloads,
+                              onChanged: settingsProvider.setOfflineDownloads,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  // Notification Settings
+                  _buildSectionTitle('إعدادات الإشعارات'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: Icons.notifications,
+                            title: 'الإشعارات العامة',
+                            trailing: Switch(
+                              value: settingsProvider.notificationsEnabled,
+                              onChanged: (value) => settingsProvider.toggleNotifications(),
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.schedule,
+                            title: 'تذكيرات الدورات',
+                            trailing: Switch(
+                              value: settingsProvider.courseReminders,
+                              onChanged: settingsProvider.setCourseReminders,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.assignment_late,
+                            title: 'مواعيد التسليم',
+                            trailing: Switch(
+                              value: settingsProvider.assignmentDeadlines,
+                              onChanged: settingsProvider.setAssignmentDeadlines,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.new_releases,
+                            title: 'دورات جديدة',
+                            trailing: Switch(
+                              value: settingsProvider.newCourseAlerts,
+                              onChanged: settingsProvider.setNewCourseAlerts,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  // Accessibility & Display
+                  _buildSectionTitle('إمكانية الوصول والعرض'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: Icons.text_fields,
+                            title: 'حجم الخط',
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _getFontSizeLabel(settingsProvider.fontSize),
+                                  style: TextStyle(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                              ],
+                            ),
+                            onTap: () => _showFontSizeDialog(context, settingsProvider),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.contrast,
+                            title: 'التباين العالي',
+                            trailing: Switch(
+                              value: settingsProvider.highContrast,
+                              onChanged: settingsProvider.setHighContrast,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.motion_photos_off,
+                            title: 'تقليل الحركات',
+                            trailing: Switch(
+                              value: settingsProvider.reduceAnimations,
+                              onChanged: settingsProvider.setReduceAnimations,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  // Privacy & Data
+                  _buildSectionTitle('الخصوصية والبيانات'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: Icons.visibility,
+                            title: 'رؤية الملف الشخصي',
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  settingsProvider.profileVisibility == 'public' ? 'عام' : 'خاص',
+                                  style: TextStyle(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                              ],
+                            ),
+                            onTap: () => _showProfileVisibilityDialog(context, settingsProvider),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.share,
+                            title: 'مشاركة إحصائيات التعلم',
+                            trailing: Switch(
+                              value: settingsProvider.statisticsSharing,
+                              onChanged: settingsProvider.setStatisticsSharing,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.wifi,
+                            title: 'استخدام الواي فاي فقط',
+                            trailing: Switch(
+                              value: settingsProvider.wifiOnly,
+                              onChanged: settingsProvider.setWifiOnly,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  // Account & Security
+                  _buildSectionTitle('الحساب والأمان'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: Icons.security,
+                            title: 'المصادقة الثنائية',
+                            trailing: Switch(
+                              value: settingsProvider.twoFactorAuth,
+                              onChanged: settingsProvider.setTwoFactorAuth,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.email,
+                            title: 'رسائل البريد الإلكتروني',
+                            trailing: Switch(
+                              value: settingsProvider.emailPreferences,
+                              onChanged: settingsProvider.setEmailPreferences,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.download,
+                            title: 'تصدير البيانات',
+                            onTap: () => _showExportDataDialog(context),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.clear_all,
+                            title: 'مسح التخزين المؤقت',
+                            onTap: () => _showClearCacheDialog(context),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  // Regional Settings
+                  _buildSectionTitle('الإعدادات الإقليمية'),
+                  Consumer<AppSettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      return Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: Icons.access_time,
+                            title: 'أوقات الصلاة',
+                            trailing: Switch(
+                              value: settingsProvider.prayerTimes,
+                              onChanged: settingsProvider.setPrayerTimes,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.calendar_today,
+                            title: 'التقويم الهجري',
+                            trailing: Switch(
+                              value: settingsProvider.hijriCalendar,
+                              onChanged: settingsProvider.setHijriCalendar,
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            icon: Icons.public,
+                            title: 'المحتوى الإقليمي',
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _getRegionalContentLabel(settingsProvider.regionalContent),
+                                  style: TextStyle(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                              ],
+                            ),
+                            onTap: () => _showRegionalContentDialog(context, settingsProvider),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Sign Out Button
