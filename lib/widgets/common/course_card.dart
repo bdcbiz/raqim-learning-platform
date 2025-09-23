@@ -62,28 +62,34 @@ class CourseCard extends StatelessWidget {
 
           // Course Info
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Title
-                Text(
-                  title,
-                  style: AppTextStyles.cardTitle.copyWith(fontSize: 13),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Container(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    title,
+                    style: AppTextStyles.cardTitle.copyWith(fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const SizedBox(height: 3),
 
                 // Instructor
-                Text(
-                  instructor,
-                  style: AppTextStyles.small.copyWith(
-                    color: AppColors.secondaryText,
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    instructor,
+                    style: AppTextStyles.small.copyWith(
+                      color: AppColors.secondaryText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
 

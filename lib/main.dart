@@ -39,6 +39,7 @@ import 'features/courses/screens/my_courses_screen.dart';
 import 'features/courses/screens/lesson_player_screen.dart';
 import 'features/certificates/screens/certificates_screen.dart';
 import 'features/community/screens/create_post_screen.dart';
+import 'features/community/screens/prompt_library_screen.dart';
 import 'features/news/screens/news_details_screen.dart';
 import 'services/auth/auth_service_factory.dart';
 import 'services/analytics/analytics_service_factory.dart';
@@ -54,6 +55,7 @@ import 'features/admin/screens/content_management_screen.dart';
 import 'features/admin/screens/financial_management_screen.dart';
 import 'features/admin/providers/admin_auth_provider.dart';
 import 'features/courses/screens/course_content_screen.dart';
+import 'features/ai_tools/screens/ai_tools_screen.dart';
 import 'services/sync_service.dart';
 
 void main() async {
@@ -275,6 +277,10 @@ class RaqimApp extends StatelessWidget {
               builder: (context, state) => const CreatePostScreen(),
             ),
             GoRoute(
+              path: 'community/prompts',
+              builder: (context, state) => const PromptLibraryScreen(),
+            ),
+            GoRoute(
               path: 'news/details/:newsId',
               builder: (context, state) {
                 final newsId = state.pathParameters['newsId']!;
@@ -347,6 +353,10 @@ class RaqimApp extends StatelessWidget {
               },
             ),
           ],
+        ),
+        GoRoute(
+          path: '/ai-tools',
+          builder: (context, state) => const AIToolsScreen(),
         ),
         // Admin routes
         GoRoute(

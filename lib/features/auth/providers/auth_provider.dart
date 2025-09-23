@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/user_model.dart';
-import '../../../services/api_service.dart';
+import '../../../services/api/api_service.dart';
 import '../../../services/cache_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final SharedPreferences _prefs;
+  final ApiService _apiService = ApiService.instance;
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _error;
@@ -16,6 +17,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _initializeAuth() async {
     await CacheService.init();
+    await _apiService.initialize();
     await _loadUser();
   }
 
@@ -59,27 +61,24 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _refreshUserFromServer() async {
     try {
-      await ApiService.init();
-      if (ApiService.authToken != null) {
-        final response = await ApiService.getProfile();
-        if (response['user'] != null) {
-          final userData = response['user'];
-          _currentUser = UserModel(
-            id: userData['_id'] ?? userData['id'],
-            email: userData['email'],
-            name: userData['name'],
-            photoUrl: userData['avatarUrl'],
-            bio: userData['bio'],
-            createdAt: DateTime.parse(userData['createdAt'] ?? DateTime.now().toIso8601String()),
-          );
-          
-          // Update cache
-          await CacheService.cacheUserData(_currentUser!);
-          await CacheService.updateLastSync();
-          await _saveUser();
-          
-          notifyListeners();
-        }
+      final response = await _apiService.get('/auth/me');
+      if (response['data'] != null) {
+        final userData = response['data'];
+        _currentUser = UserModel(
+          id: userData['id'].toString(),
+          email: userData['email'],
+          name: userData['name'],
+          photoUrl: userData['avatar'],
+          bio: userData['bio'],
+          createdAt: DateTime.parse(userData['created_at'] ?? DateTime.now().toIso8601String()),
+        );
+
+        // Update cache
+        await CacheService.cacheUserData(_currentUser!);
+        await CacheService.updateLastSync();
+        await _saveUser();
+
+        notifyListeners();
       }
     } catch (e) {
       print('Error refreshing user from server: $e');
@@ -92,34 +91,43 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Call real API
-      final response = await ApiService.login(
-        email: email,
-        password: password,
-      );
-      
-      // Create UserModel from API response
-      final userData = response['user'];
-      _currentUser = UserModel(
-        id: userData['_id'] ?? userData['id'],
-        email: userData['email'],
-        name: userData['name'],
-        photoUrl: userData['avatarUrl'],
-        bio: userData['bio'],
-        createdAt: DateTime.parse(userData['createdAt'] ?? DateTime.now().toIso8601String()),
-      );
-      
-      await _saveUser();
-      
-      // Cache the user data
-      await CacheService.cacheUserData(_currentUser!);
-      await CacheService.updateLastSync();
-      
-      _isLoading = false;
-      notifyListeners();
-      return true;
+      final response = await _apiService.post('/auth/login', body: {
+        'email': email,
+        'password': password,
+      });
+
+      if (response['data'] != null && response['data']['user'] != null) {
+        final userData = response['data']['user'];
+        _currentUser = UserModel(
+          id: userData['id'].toString(),
+          email: userData['email'],
+          name: userData['name'],
+          photoUrl: userData['avatar'],
+          bio: userData['bio'],
+          createdAt: DateTime.parse(userData['created_at'] ?? DateTime.now().toIso8601String()),
+        );
+
+        await _saveUser();
+
+        // Cache the user data
+        await CacheService.cacheUserData(_currentUser!);
+        await CacheService.updateLastSync();
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = 'استجابة غير صحيحة من الخادم';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
-      _error = 'فشل تسجيل الدخول: ${e.toString()}';
+      if (e is ApiException) {
+        _error = e.message;
+      } else {
+        _error = 'فشل تسجيل الدخول: ${e.toString()}';
+      }
       _isLoading = false;
       notifyListeners();
       return false;
@@ -132,40 +140,47 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Call real API
-      final response = await ApiService.register(
-        name: name,
-        email: email,
-        password: password,
-      );
-      
-      // Create UserModel from API response
-      final userData = response['user'];
-      _currentUser = UserModel(
-        id: userData['_id'] ?? userData['id'],
-        email: userData['email'],
-        name: userData['name'],
-        photoUrl: userData['avatarUrl'],
-        bio: userData['bio'],
-        createdAt: DateTime.parse(userData['createdAt'] ?? DateTime.now().toIso8601String()),
-      );
-      
-      await _saveUser();
-      
-      // Cache the user data
-      await CacheService.cacheUserData(_currentUser!);
-      await CacheService.updateLastSync();
-      
-      _isLoading = false;
-      notifyListeners();
-      return true;
+      final response = await _apiService.post('/auth/register', body: {
+        'name': name,
+        'email': email,
+        'password': password,
+      });
+
+      if (response['data'] != null && response['data']['user'] != null) {
+        final userData = response['data']['user'];
+        _currentUser = UserModel(
+          id: userData['id'].toString(),
+          email: userData['email'],
+          name: userData['name'],
+          photoUrl: userData['avatar'],
+          bio: userData['bio'],
+          createdAt: DateTime.parse(userData['created_at'] ?? DateTime.now().toIso8601String()),
+        );
+
+        await _saveUser();
+
+        // Cache the user data
+        await CacheService.cacheUserData(_currentUser!);
+        await CacheService.updateLastSync();
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = 'استجابة غير صحيحة من الخادم';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
-      // Extract the error message
-      String errorMessage = e.toString();
-      if (errorMessage.contains('المستخدم موجود بالفعل')) {
-        _error = 'المستخدم موجود بالفعل';
-      } else if (errorMessage.contains('User already exists')) {
-        _error = 'المستخدم موجود بالفعل';
+      if (e is ValidationException) {
+        if (e.getFieldError('email')?.contains('taken') == true) {
+          _error = 'المستخدم موجود بالفعل';
+        } else {
+          _error = e.message;
+        }
+      } else if (e is ApiException) {
+        _error = e.message;
       } else {
         _error = 'فشل إنشاء الحساب';
       }
@@ -211,7 +226,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     try {
       // Try to logout from API (but don't fail if server is down)
-      await ApiService.logout();
+      await _apiService.post('/auth/logout');
     } catch (e) {
       print('API logout failed (continuing with local logout): $e');
     }

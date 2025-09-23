@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
@@ -106,25 +107,40 @@ class NewsFeedScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
-          child: SvgPicture.asset(
-            'assets/images/raqimLogo.svg',
-            height: 28,
-            colorFilter: ColorFilter.mode(
-              AppColors.primaryColor,
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        title: Text(
+        centerTitle: !kIsWeb,
+        leading: kIsWeb ? null : null,
+        title: kIsWeb ? Text(
           'الأخبار',
           style: TextStyle(
             color: AppColors.primaryColor,
             fontWeight: FontWeight.bold,
           ),
+        ) : Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 32,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'الأخبار',
+                  style: TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 32),
+          ],
         ),
+        automaticallyImplyLeading: false,
       ),
       backgroundColor: const Color(0xFFF8F9FA),
       body: newsProvider.isLoading
@@ -196,25 +212,40 @@ class NewsFeedScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
-          child: SvgPicture.asset(
-            'assets/images/raqimLogo.svg',
-            height: 28,
-            colorFilter: ColorFilter.mode(
-              AppColors.primaryColor,
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        title: Text(
+        centerTitle: !kIsWeb,
+        leading: kIsWeb ? null : null,
+        title: kIsWeb ? Text(
           'الأخبار',
           style: TextStyle(
             color: AppColors.primaryColor,
             fontWeight: FontWeight.bold,
           ),
+        ) : Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 32,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'الأخبار',
+                  style: TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 32),
+          ],
         ),
+        automaticallyImplyLeading: false,
       ),
       backgroundColor: const Color(0xFFF8F9FA),
       body: newsProvider.isLoading

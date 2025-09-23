@@ -194,15 +194,16 @@ class _AnimatedCourseCardState extends State<AnimatedCourseCard>
                       ],
                     ),
                     // Content with fixed height to prevent overflow
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Column(
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -297,7 +298,6 @@ class _AnimatedCourseCardState extends State<AnimatedCourseCard>
                           ],
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -337,5 +337,199 @@ class _AnimatedCourseCardState extends State<AnimatedCourseCard>
       default:
         return const Color(0xFF6366F1);
     }
+  }
+}
+
+class FullWidthCourseCard extends StatelessWidget {
+  final String title;
+  final String instructor;
+  final String imageUrl;
+  final String category;
+  final int studentsCount;
+  final double rating;
+  final String price;
+  final VoidCallback onTap;
+  final Color categoryColor;
+
+  const FullWidthCourseCard({
+    super.key,
+    required this.title,
+    required this.instructor,
+    required this.imageUrl,
+    required this.category,
+    required this.studentsCount,
+    required this.rating,
+    required this.price,
+    required this.onTap,
+    this.categoryColor = const Color(0xFF10B981),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image section
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
+              child: Container(
+                width: 120,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: categoryColor.withValues(alpha: 0.1),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.image,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    ),
+                    // Category badge
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: categoryColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          category,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Content section
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Instructor
+                    Text(
+                      instructor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Stats and price row
+                    Row(
+                      children: [
+                        // Students count
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${studentsCount}+',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 16),
+                        // Rating
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Color(0xFFFFB800),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Price
+                        Text(
+                          price,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: price == 'مجاني'
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF6366F1),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

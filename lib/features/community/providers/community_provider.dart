@@ -5,10 +5,12 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../../services/database/database_service.dart';
 import '../../../services/unified_data_service.dart';
+import '../models/prompt_post.dart';
 
 class CommunityProvider extends ChangeNotifier {
   List<PostModel> _posts = [];
   PostModel? _selectedPost;
+  List<PromptPost> _prompts = [];
   bool _isLoading = false;
   String? _error;
   String _sortBy = 'recent';
@@ -23,6 +25,7 @@ class CommunityProvider extends ChangeNotifier {
   }
 
   PostModel? get selectedPost => _selectedPost;
+  List<PromptPost> get prompts => _prompts;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get sortBy => _sortBy;
@@ -426,6 +429,178 @@ class CommunityProvider extends ChangeNotifier {
         downvotes: 8,
         createdAt: DateTime.now().subtract(const Duration(hours: 6)),
         updatedAt: DateTime.now().subtract(const Duration(hours: 6)),
+      ),
+    ];
+  }
+
+  // Prompt-related methods
+  Future<void> loadPrompts() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // For now, use mock data for prompts
+      _prompts = _generateMockPrompts();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = 'فشل تحميل البرومبت: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addPrompt(PromptPost prompt) async {
+    _prompts.insert(0, prompt);
+    notifyListeners();
+  }
+
+  Future<void> copyPrompt(String promptId) async {
+    final promptIndex = _prompts.indexWhere((p) => p.id == promptId);
+    if (promptIndex != -1) {
+      final prompt = _prompts[promptIndex];
+      _prompts[promptIndex] = prompt.copyWith(
+        copies: prompt.copies + 1,
+        copiedBy: [...prompt.copiedBy, 'current_user_id'],
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> likePrompt(String promptId) async {
+    final promptIndex = _prompts.indexWhere((p) => p.id == promptId);
+    if (promptIndex != -1) {
+      final prompt = _prompts[promptIndex];
+      final currentUserId = 'current_user_id';
+      final likedBy = [...prompt.likedBy];
+
+      if (likedBy.contains(currentUserId)) {
+        likedBy.remove(currentUserId);
+      } else {
+        likedBy.add(currentUserId);
+      }
+
+      _prompts[promptIndex] = prompt.copyWith(
+        likes: likedBy.length,
+        likedBy: likedBy,
+      );
+      notifyListeners();
+    }
+  }
+
+  List<PromptPost> _generateMockPrompts() {
+    final now = DateTime.now();
+    return [
+      PromptPost(
+        id: 'p1',
+        title: 'برومبت تطوير الكود بطريقة احترافية',
+        description: 'برومبت لمساعدة المطورين على كتابة كود نظيف ومنظم مع أفضل الممارسات',
+        promptText: 'أريدك أن تعمل كمطور خبير. عندما أعطيك كود، أريدك أن تراجعه وتقترح تحسينات مع شرح السبب وراء كل اقتراح. ركز على:\n\n1. قابلية القراءة والصيانة\n2. الأداء\n3. الأمان\n4. اتباع أفضل الممارسات\n\nالكود: [ضع الكود هنا]',
+        category: PromptCategory.coding,
+        difficulty: PromptDifficulty.intermediate,
+        authorId: 'user1',
+        authorName: 'أحمد المطور',
+        tags: ['برمجة', 'مراجعة الكود', 'أفضل الممارسات'],
+        createdAt: now.subtract(const Duration(hours: 2)),
+        updatedAt: now.subtract(const Duration(hours: 2)),
+        likes: 142,
+        copies: 89,
+        views: 456,
+        likedBy: ['user2', 'user3', 'user4'],
+        copiedBy: ['user2', 'user5'],
+        isVerified: true,
+        aiTool: 'ChatGPT',
+        exampleOutput: 'سيقوم الـ AI بمراجعة الكود وتقديم اقتراحات مفصلة للتحسين مع أمثلة عملية.',
+      ),
+      PromptPost(
+        id: 'p2',
+        title: 'كتابة محتوى تسويقي جذاب',
+        description: 'برومبت لإنشاء محتوى تسويقي يجذب العملاء ويزيد المبيعات',
+        promptText: 'أريدك أن تعمل كخبير تسويق محتوى. اكتب محتوى تسويقي مقنع لـ [المنتج/الخدمة] يستهدف [الجمهور المستهدف]. يجب أن يتضمن المحتوى:\n\n1. عنوان جذاب\n2. فوائد واضحة\n3. دعوة للعمل قوية\n4. لغة عاطفية مؤثرة\n\nالمنتج/الخدمة: [اوصف المنتج]\nالجمهور المستهدف: [اوصف الجمهور]',
+        category: PromptCategory.marketing,
+        difficulty: PromptDifficulty.beginner,
+        authorId: 'user2',
+        authorName: 'سارة التسويق',
+        tags: ['تسويق', 'كتابة', 'محتوى'],
+        createdAt: now.subtract(const Duration(hours: 6)),
+        updatedAt: now.subtract(const Duration(hours: 6)),
+        likes: 89,
+        copies: 67,
+        views: 234,
+        aiTool: 'Claude',
+        exampleOutput: 'محتوى تسويقي احترافي مع عنوان جذاب ونقاط قوة واضحة ودعوة فعالة للعمل.',
+      ),
+      PromptPost(
+        id: 'p3',
+        title: 'تحليل البيانات والاستنتاجات',
+        description: 'برومبت لتحليل البيانات واستخراج رؤى قابلة للتنفيذ',
+        promptText: 'أريدك أن تعمل كمحلل بيانات خبير. حلل البيانات التالية واستخرج الرؤى المهمة:\n\n[ضع البيانات هنا]\n\nيرجى تقديم:\n1. ملخص للاتجاهات الرئيسية\n2. الأنماط المثيرة للاهتمام\n3. التوصيات القابلة للتنفيذ\n4. الرسوم البيانية المقترحة\n5. المؤشرات المهمة',
+        category: PromptCategory.analysis,
+        difficulty: PromptDifficulty.advanced,
+        authorId: 'user3',
+        authorName: 'خالد المحلل',
+        tags: ['تحليل', 'بيانات', 'رؤى'],
+        createdAt: now.subtract(const Duration(days: 1)),
+        updatedAt: now.subtract(const Duration(days: 1)),
+        likes: 156,
+        copies: 123,
+        views: 789,
+        isVerified: true,
+        aiTool: 'GPT-4',
+      ),
+      PromptPost(
+        id: 'p4',
+        title: 'كتابة مقالات تعليمية شاملة',
+        description: 'برومبت لكتابة مقالات تعليمية مفيدة وسهلة الفهم',
+        promptText: 'اكتب مقالاً تعليمياً شاملاً حول موضوع [الموضوع] للمبتدئين. يجب أن يتضمن المقال:\n\n1. مقدمة جذابة تشرح أهمية الموضوع\n2. شرح المفاهيم الأساسية بطريقة بسيطة\n3. أمثلة عملية\n4. نصائح مفيدة\n5. خاتمة تلخص النقاط المهمة\n6. مصادر إضافية للتعلم\n\nالموضوع: [ضع الموضوع هنا]\nالطول المطلوب: [عدد الكلمات]',
+        category: PromptCategory.education,
+        difficulty: PromptDifficulty.intermediate,
+        authorId: 'user4',
+        authorName: 'فاطمة الكاتبة',
+        tags: ['تعليم', 'كتابة', 'مقالات'],
+        createdAt: now.subtract(const Duration(hours: 12)),
+        updatedAt: now.subtract(const Duration(hours: 12)),
+        likes: 78,
+        copies: 45,
+        views: 167,
+        aiTool: 'Gemini',
+      ),
+      PromptPost(
+        id: 'p5',
+        title: 'إنشاء قصص إبداعية مشوقة',
+        description: 'برومبت لكتابة قصص قصيرة مبدعة ومثيرة للاهتمام',
+        promptText: 'اكتب قصة قصيرة مشوقة بالمعايير التالية:\n\n- النوع: [اختر النوع مثل خيال علمي، رومانسية، مغامرة]\n- الشخصية الرئيسية: [اوصف الشخصية]\n- المكان: [حدد المكان والزمان]\n- الصراع: [نوع المشكلة أو التحدي]\n- الطول: 500-800 كلمة\n\nتأكد من وجود:\n1. بداية جذابة\n2. تطور مثير للأحداث\n3. حوارات طبيعية\n4. نهاية مفاجئة أو مؤثرة',
+        category: PromptCategory.creative,
+        difficulty: PromptDifficulty.beginner,
+        authorId: 'user5',
+        authorName: 'علي المبدع',
+        tags: ['قصص', 'إبداع', 'كتابة أدبية'],
+        createdAt: now.subtract(const Duration(hours: 18)),
+        updatedAt: now.subtract(const Duration(hours: 18)),
+        likes: 234,
+        copies: 156,
+        views: 567,
+        isVerified: true,
+        aiTool: 'Claude',
+        exampleOutput: 'قصة قصيرة مكتملة العناصر مع شخصيات واقعية وأحداث مترابطة ونهاية مؤثرة.',
+      ),
+      PromptPost(
+        id: 'p6',
+        title: 'تطوير خطة عمل شاملة',
+        description: 'برومبت لإنشاء خطة عمل احترافية للشركات الناشئة',
+        promptText: 'أريدك أن تعمل كمستشار أعمال. اعد خطة عمل شاملة لشركة ناشئة في مجال [المجال]. يجب أن تتضمن الخطة:\n\n1. ملخص تنفيذي\n2. وصف المنتج/الخدمة\n3. تحليل السوق والمنافسين\n4. الاستراتيجية التسويقية\n5. الخطة المالية\n6. فريق العمل\n7. المخاطر والحلول\n8. الجدول الزمني\n\nمعلومات الشركة:\nالمجال: [ضع المجال]\nالمنتج/الخدمة: [الوصف]\nالسوق المستهدف: [الوصف]',
+        category: PromptCategory.business,
+        difficulty: PromptDifficulty.advanced,
+        authorId: 'user6',
+        authorName: 'محمد الاستشاري',
+        tags: ['أعمال', 'خطة عمل', 'استراتيجية'],
+        createdAt: now.subtract(const Duration(hours: 8)),
+        updatedAt: now.subtract(const Duration(hours: 8)),
+        likes: 167,
+        copies: 98,
+        views: 345,
+        isVerified: true,
+        aiTool: 'GPT-4',
       ),
     ];
   }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/certificates_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
 
 class CertificatesScreen extends StatelessWidget {
   const CertificatesScreen({super.key});
@@ -12,8 +12,30 @@ class CertificatesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: RaqimAppBar(
-        title: AppLocalizations.of(context)?.translate('myCertificates') ?? 'شهاداتي',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'الشهادات',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
       body: Consumer<CertificatesProvider>(
         builder: (context, provider, child) {

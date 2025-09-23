@@ -34,7 +34,7 @@ class PillButton extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
         border: isSelected ? null : Border.all(
           color: AppColors.inputBackground,
           width: 1,
@@ -44,12 +44,19 @@ class PillButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              text,
-              style: AppTextStyles.pill.copyWith(color: textColor),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Center(
+              child: Text(
+                text,
+                style: AppTextStyles.pill.copyWith(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),

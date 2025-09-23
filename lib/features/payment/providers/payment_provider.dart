@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/payment_method.dart';
+import '../../../services/api/api_service.dart';
+import '../../../core/exceptions/app_exceptions.dart';
+import '../../../core/handlers/error_handler.dart';
 
 class PaymentProvider extends ChangeNotifier {
   List<PaymentMethod> _paymentMethods = [];
   List<PaymentTransaction> _transactions = [];
   bool _isLoading = false;
   String? _error;
+  final ApiService _apiService = ApiService.instance;
 
   List<PaymentMethod> get paymentMethods => _paymentMethods;
   List<PaymentTransaction> get transactions => _transactions;
@@ -13,8 +17,13 @@ class PaymentProvider extends ChangeNotifier {
   String? get error => _error;
 
   PaymentProvider() {
+    _initializeProvider();
+  }
+
+  Future<void> _initializeProvider() async {
+    await _apiService.initialize();
     _initializePaymentMethods();
-    _loadTransactions();
+    await _loadTransactions();
   }
 
   void _initializePaymentMethods() {
@@ -53,8 +62,33 @@ class PaymentProvider extends ChangeNotifier {
     ];
   }
 
-  void _loadTransactions() {
-    _transactions = [
+  Future<void> _loadTransactions() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await ErrorHandler.safeAsyncCall<List<PaymentTransaction>>(
+      () async {
+        final response = await _apiService.get('/payments/transactions');
+
+        if (response['data'] != null) {
+          final transactionData = response['data'] as List;
+          return transactionData.map((transactionJson) => _convertApiResponseToTransaction(transactionJson)).toList();
+        } else {
+          throw const NetworkException('Invalid API response structure', code: 'invalid_response');
+        }
+      },
+      context: 'Loading payment transactions',
+      fallbackValue: _generateMockTransactions(),
+    );
+
+    _transactions = result ?? _generateMockTransactions();
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  List<PaymentTransaction> _generateMockTransactions() {
+    return [
       PaymentTransaction(
         id: 'TRX001',
         amount: 299.99,
@@ -91,6 +125,20 @@ class PaymentProvider extends ChangeNotifier {
     ];
   }
 
+  PaymentTransaction _convertApiResponseToTransaction(Map<String, dynamic> json) {
+    return PaymentTransaction(
+      id: json['id'].toString(),
+      amount: (json['amount'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'SAR',
+      status: json['status'] ?? 'pending',
+      date: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      description: json['description'] ?? '',
+      paymentMethod: json['payment_method'] ?? 'غير محدد',
+      courseId: json['course_id']?.toString() ?? '',
+      courseName: json['course_name'] ?? '',
+    );
+  }
+
   Future<bool> processPayment({
     required String paymentMethodId,
     required double amount,
@@ -102,19 +150,40 @@ class PaymentProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    try {
-      await Future.delayed(const Duration(seconds: 3));
+    final result = await ErrorHandler.safeAsyncCall<Map<String, dynamic>>(
+      () async {
+        final response = await _apiService.post('/payments/process', body: {
+          'payment_method_id': paymentMethodId,
+          'amount': amount,
+          'course_id': courseId,
+          'course_name': courseName,
+          'payment_details': paymentDetails ?? {},
+        });
 
+        if (response['status'] == 'success') {
+          return response;
+        } else {
+          throw BusinessLogicException(
+            response['message'] ?? 'فشل في معالجة الدفع',
+            code: 'payment_failed',
+          );
+        }
+      },
+      context: 'Processing payment',
+      fallbackValue: null,
+    );
+
+    if (result != null) {
       final paymentMethod = _paymentMethods.firstWhere(
         (method) => method.id == paymentMethodId,
         orElse: () => _paymentMethods.first,
       );
 
       final transaction = PaymentTransaction(
-        id: 'TRX${DateTime.now().millisecondsSinceEpoch}',
+        id: result['data']['transaction_id'] ?? 'TRX${DateTime.now().millisecondsSinceEpoch}',
         amount: amount,
         currency: 'SAR',
-        status: 'completed',
+        status: result['data']['status'] ?? 'completed',
         date: DateTime.now(),
         description: 'شراء دورة $courseName',
         paymentMethod: paymentMethod.name,
@@ -123,12 +192,11 @@ class PaymentProvider extends ChangeNotifier {
       );
 
       _transactions.insert(0, transaction);
-
       _isLoading = false;
       notifyListeners();
       return true;
-    } catch (e) {
-      _error = 'حدث خطأ في معالجة الدفع';
+    } else {
+      _error = 'فشل في معالجة الدفع';
       _isLoading = false;
       notifyListeners();
       return false;

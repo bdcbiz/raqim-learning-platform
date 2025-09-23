@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/courses_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
@@ -9,7 +11,6 @@ import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
 import '../../../widgets/common/animated_course_card.dart';
 import '../../../widgets/common/modern_course_card.dart' show ModernCourseCard;
-import '../../../widgets/common/raqim_app_bar.dart';
 
 class CoursesListScreen extends StatefulWidget {
   final bool showOnlyEnrolled;
@@ -218,12 +219,46 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBackground,
-      appBar: isWideScreen ? null : RaqimAppBar(
-        title: widget.showOnlyEnrolled
-            ? (AppLocalizations.of(context)?.translate('myCourses') ?? 'كورساتي')
-            : (AppLocalizations.of(context)?.translate('coursesTitle') ?? 'الدورات التعليمية'),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: !kIsWeb,
+        leading: kIsWeb ? null : null,
+        title: kIsWeb ? Text(
+          'قائمة الدورات',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ) : Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 32,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'قائمة الدورات',
+                  style: TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 32),
+          ],
+        ),
+        automaticallyImplyLeading: false,
       ),
+      backgroundColor: AppColors.primaryBackground,
       body: Column(
         children: [
           // Desktop Header for wide screens
@@ -470,14 +505,8 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                       )
                     : RefreshIndicator(
                         onRefresh: () => coursesProvider.loadCourses(),
-                        child: GridView.builder(
+                        child: ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: isWideScreen ? 3 : 2,
-                            childAspectRatio: isWideScreen ? 1.3 : 0.85,  // Adjusted aspect ratio for web to fit content exactly
-                            crossAxisSpacing: isWideScreen ? 16 : 12,
-                            mainAxisSpacing: isWideScreen ? 16 : 12,
-                          ),
                           itemCount: displayCourses.length,
                           itemBuilder: (context, index) {
                             final course = displayCourses[index];
@@ -489,19 +518,22 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                             final price = course is Map ? course['price'] : course.price;
                             final rating = course is Map ? course['rating'] : course.rating;
 
-                            return AnimatedCourseCard(
-                              title: _getLocalizedCourseTitle(course, context),
-                              instructor: _getLocalizedInstructorName(course, context),
-                              imageUrl: thumbnailUrl ?? '',
-                              category: category ?? 'تعلم الآلة',
-                              studentsCount: 500,
-                              price: (price == 0 || price == 0.0) ? 'مجاني' : '${price?.toInt() ?? 0} ر.س',
-                              rating: rating?.toDouble() ?? 4.5,
-                              categoryColor: ModernCourseCard.getCategoryColor(category ?? 'تعلم الآلة'),
-                              onTap: () {
-                                Provider.of<CoursesProvider>(context, listen: false).selectCourse(courseId);
-                                context.go('/course/$courseId');
-                              },
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: AnimatedCourseCard(
+                                title: _getLocalizedCourseTitle(course, context),
+                                instructor: _getLocalizedInstructorName(course, context),
+                                imageUrl: thumbnailUrl ?? '',
+                                category: category ?? 'تعلم الآلة',
+                                studentsCount: 500,
+                                price: (price == 0 || price == 0.0) ? 'مجاني' : '${price?.toInt() ?? 0} ر.س',
+                                rating: rating?.toDouble() ?? 4.5,
+                                categoryColor: ModernCourseCard.getCategoryColor(category ?? 'تعلم الآلة'),
+                                onTap: () {
+                                  Provider.of<CoursesProvider>(context, listen: false).selectCourse(courseId);
+                                  context.go('/course/$courseId');
+                                },
+                              ),
                             );
                           },
                         ),

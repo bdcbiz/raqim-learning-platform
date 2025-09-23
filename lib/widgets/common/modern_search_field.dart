@@ -11,6 +11,7 @@ class ModernSearchField extends StatelessWidget {
   final IconData? prefixIcon;
   final IconData? suffixIcon;
   final VoidCallback? onSuffixIconTap;
+  final TextStyle? textStyle;
 
   const ModernSearchField({
     super.key,
@@ -22,6 +23,7 @@ class ModernSearchField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onSuffixIconTap,
+    this.textStyle,
   });
 
   @override
@@ -43,10 +45,10 @@ class ModernSearchField extends StatelessWidget {
         onChanged: onChanged,
         onTap: onTap,
         enabled: enabled,
-        style: AppTextStyles.body,
+        style: textStyle ?? AppTextStyles.body.copyWith(fontSize: 14),
         decoration: InputDecoration(
           hintText: hintText ?? 'ماذا تود أن تتعلم اليوم؟',
-          hintStyle: AppTextStyles.bodySecondary,
+          hintStyle: AppTextStyles.bodySecondary.copyWith(fontSize: 14),
           prefixIcon: Icon(
             prefixIcon ?? Icons.search,
             color: AppColors.secondaryText,

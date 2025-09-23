@@ -6,7 +6,6 @@ import '../../courses/screens/courses_list_screen.dart';
 import '../../community/screens/community_feed_screen.dart';
 import '../../news/screens/news_feed_screen.dart';
 import '../../profile/screens/profile_screen.dart';
-import '../../settings/screens/settings_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/adaptive_logo.dart';
@@ -35,28 +34,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final localizations = AppLocalizations.of(context);
     return [
       NavigationDestination(
-        icon: Icon(Icons.home_outlined, color: Color(0xFFB8B2E8)),
-        selectedIcon: Icon(Icons.home, color: Color(0xFFE8E5FF)),
+        icon: Icon(Icons.home_outlined, color: const Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.home, color: AppColors.primaryColor),
         label: localizations?.translate('home') ?? 'Home',
       ),
       NavigationDestination(
-        icon: Icon(Icons.school_outlined, color: Color(0xFFB8B2E8)),
-        selectedIcon: Icon(Icons.school, color: Color(0xFFE8E5FF)),
+        icon: Icon(Icons.school_outlined, color: const Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.school, color: AppColors.primaryColor),
         label: localizations?.translate('myCourses') ?? 'My Courses',
       ),
       NavigationDestination(
-        icon: Icon(Icons.forum_outlined, color: Color(0xFFB8B2E8)),
-        selectedIcon: Icon(Icons.forum, color: Color(0xFFE8E5FF)),
+        icon: Icon(Icons.forum_outlined, color: const Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.forum, color: AppColors.primaryColor),
         label: localizations?.translate('community') ?? 'Community',
       ),
       NavigationDestination(
-        icon: Icon(Icons.newspaper_outlined, color: Color(0xFFB8B2E8)),
-        selectedIcon: Icon(Icons.newspaper, color: Color(0xFFE8E5FF)),
+        icon: Icon(Icons.newspaper_outlined, color: const Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.newspaper, color: AppColors.primaryColor),
         label: localizations?.translate('news') ?? 'News',
       ),
       NavigationDestination(
-        icon: Icon(Icons.settings_outlined, color: Color(0xFFB8B2E8)),
-        selectedIcon: Icon(Icons.settings, color: Color(0xFFE8E5FF)),
+        icon: Icon(Icons.settings_outlined, color: const Color(0xFFB8B2E8)),
+        selectedIcon: Icon(Icons.settings, color: AppColors.primaryColor),
         label: 'الإعدادات',
       ),
     ];
@@ -86,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 size: 28,
               ),
               unselectedIconTheme: const IconThemeData(
-                color: Color(0xFFB8B2E8),
+                color: Color(0xFF94A3B8),
                 size: 24,
               ),
               selectedLabelTextStyle: const TextStyle(
@@ -122,17 +121,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryBackground,
-        elevation: 0,
-        centerTitle: false,
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            const AdaptiveLogo(height: 32),
-          ],
-        ),
-      ),
       body: _screens[_selectedIndex],
       extendBody: false,
       bottomNavigationBar: NavigationBar(
@@ -145,7 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
         destinations: _destinations(context),
         backgroundColor: AppColors.white,
-        indicatorColor: AppColors.primaryColor.withValues(alpha: 0.1),
+        indicatorColor: AppColors.primaryColor.withValues(alpha: 0.15),
         surfaceTintColor: AppColors.white,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         height: 65,
@@ -201,10 +189,7 @@ class DashboardHomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
+              // Settings are now integrated in the profile screen
             },
             tooltip: AppLocalizations.of(context)?.translate('settings') ?? 'Settings',
           ),

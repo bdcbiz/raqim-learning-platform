@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
 import '../providers/payment_provider.dart';
 
 class CreditCardPaymentScreen extends StatefulWidget {
@@ -73,10 +73,32 @@ class _CreditCardPaymentScreenState extends State<CreditCardPaymentScreen> {
     final isWideScreen = size.width > 900;
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBackground,
-      appBar: RaqimAppBar(
-        title: 'الدفع بالبطاقة الائتمانية',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'دفع بالبطاقة الائتمانية',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
+      backgroundColor: AppColors.primaryBackground,
       body: Column(
         children: [
           if (paymentProvider.error != null)

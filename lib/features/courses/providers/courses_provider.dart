@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-// Removed old import - using only new model
 import '../../../data/models/course_model.dart';
-import '../../../services/mock_data_service.dart';
+import '../../../services/api/api_service.dart';
 import '../../../services/cache_service.dart';
-import '../../../services/sync_service.dart';
-import '../../../services/unified_data_service.dart';
 
 class CoursesProvider extends ChangeNotifier {
   List<CourseModel> _courses = [];
@@ -15,9 +12,7 @@ class CoursesProvider extends ChangeNotifier {
   String _selectedLevel = 'الكل';
   String _selectedCategory = 'الكل';
 
-  // Data services
-  final SyncService _syncService = SyncService();
-  final UnifiedDataService _unifiedDataService = UnifiedDataService();
+  final ApiService _apiService = ApiService.instance;
 
   List<CourseModel> get courses => _filteredCourses.isEmpty ? _courses : _filteredCourses;
   CourseModel? get selectedCourse => _selectedCourse;
@@ -32,25 +27,9 @@ class CoursesProvider extends ChangeNotifier {
 
   Future<void> _initializeProvider() async {
     await CacheService.init();
-
-    // Listen to sync service changes
-    _syncService.addListener(_onDataSynced);
-
+    await _apiService.initialize();
     await loadCourses();
   }
-
-  void _onDataSynced() {
-    // Update courses when sync service data changes
-    final syncedCourses = _syncService.courses;
-    if (syncedCourses.isNotEmpty) {
-      _courses = syncedCourses;
-      _applyCurrentFilters();
-      notifyListeners();
-      print('DEBUG CoursesProvider: Courses updated from sync service');
-    }
-  }
-
-  // Removed _convertToCourseModel - sync service already provides the correct model type
 
   void _applyCurrentFilters() {
     filterCourses(
@@ -61,37 +40,21 @@ class CoursesProvider extends ChangeNotifier {
 
   Future<void> loadCourses() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      print('DEBUG CoursesProvider: Starting to load courses...');
+      print('DEBUG CoursesProvider: Loading courses from Laravel API...');
 
-      // Force sync to get real data from Firebase
-      await _syncService.forceSync();
+      // Get courses from Laravel API
+      final response = await _apiService.get('/courses');
 
-      // Try to get courses from sync service first (real data)
-      if (_syncService.courses.isNotEmpty) {
-        _courses = _syncService.courses;
-        print('DEBUG CoursesProvider: Loaded ${_courses.length} courses from sync service (REAL DATA)');
+      if (response['data'] != null) {
+        final coursesData = response['data'] as List;
+        _courses = coursesData.map((courseJson) => _convertApiResponseToCourseModel(courseJson)).toList();
+        print('DEBUG CoursesProvider: Loaded ${_courses.length} courses from Laravel API');
       } else {
-        // Try unified data service directly
-        print('DEBUG CoursesProvider: Sync service empty, trying unified data service directly...');
-        final realCourses = await _unifiedDataService.getAllCourses();
-        if (realCourses.isNotEmpty) {
-          _courses = realCourses;
-          print('DEBUG CoursesProvider: Loaded ${_courses.length} courses from unified data service (REAL DATA)');
-        } else {
-          // Final fallback to mock data if no real data available
-          print('DEBUG CoursesProvider: No real data available, using mock data as fallback');
-          final mockService = MockDataService();
-          final response = await mockService.getCourses();
-
-          if (response['courses'] != null || response['data'] != null) {
-            final coursesList = response['courses'] ?? response['data'] ?? [];
-            _courses = coursesList as List<CourseModel>;
-            print('DEBUG CoursesProvider: Loaded ${_courses.length} courses from mock service (FALLBACK)');
-          }
-        }
+        throw Exception('Invalid API response structure');
       }
 
       // Load enrolled courses from cache and update enrollment status
@@ -106,81 +69,51 @@ class CoursesProvider extends ChangeNotifier {
 
       _filteredCourses = _courses;
 
-      // Cache the courses for consistency
+      // Cache the courses
       await CacheService.cacheCourses(_courses);
       print('DEBUG CoursesProvider: Cached courses successfully');
 
     } catch (e) {
       print('DEBUG CoursesProvider: Error loading courses: $e');
-      _error = 'فشل تحميل الدورات';
+      if (e is ApiException) {
+        _error = e.message;
+      } else {
+        _error = 'فشل تحميل الدورات';
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> _refreshCoursesFromServer({String? category}) async {
-    try {
-      print('DEBUG CoursesProvider: Refreshing courses from server...');
-
-      // Force sync with the unified data service
-      await _syncService.forceSync();
-
-      // Get the updated courses from sync service first
-      if (_syncService.courses.isNotEmpty) {
-        _courses = _syncService.courses;
-        print('DEBUG CoursesProvider: Refreshed ${_courses.length} courses from sync service (REAL DATA)');
-      } else {
-        // Try unified data service directly
-        print('DEBUG CoursesProvider: Sync service empty, trying unified data service for refresh...');
-        final realCourses = await _unifiedDataService.getAllCourses();
-        if (realCourses.isNotEmpty) {
-          _courses = realCourses;
-          print('DEBUG CoursesProvider: Refreshed ${_courses.length} courses from unified data service (REAL DATA)');
-        } else {
-          throw Exception('No real data available from Firebase');
-        }
-      }
-
-      // Apply category filter if specified
-      if (category != null && category != 'الكل') {
-        _courses = _courses.where((c) => c.category == category).toList();
-        print('DEBUG CoursesProvider: Applied category filter: $category, ${_courses.length} courses remaining');
-      }
-
-      _filteredCourses = _courses;
-
-      await CacheService.cacheCourses(_courses);
-      await CacheService.updateLastSync();
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      print('ERROR CoursesProvider: Failed to refresh from real data: $e');
-
-      // Final fallback to mock service only if real data completely fails
-      try {
-        print('DEBUG CoursesProvider: Using mock data as final fallback for refresh');
-        final mockService = MockDataService();
-        final response = await mockService.getCourses(category: category);
-
-        if (response['courses'] != null || response['data'] != null) {
-          final coursesList = response['courses'] ?? response['data'] ?? [];
-          _courses = coursesList as List<CourseModel>;
-          _filteredCourses = _courses;
-
-          await CacheService.cacheCourses(_courses);
-          await CacheService.updateLastSync();
-          print('DEBUG CoursesProvider: Refreshed ${_courses.length} courses from mock service (FALLBACK)');
-        }
-      } catch (mockError) {
-        print('ERROR CoursesProvider: Mock service also failed: $mockError');
-        _error = 'فشل تحديث الدورات';
-      }
-
-      _isLoading = false;
-      notifyListeners();
-    }
+  CourseModel _convertApiResponseToCourseModel(Map<String, dynamic> json) {
+    return CourseModel(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      thumbnailUrl: json['thumbnail_url'] ?? '',
+      promoVideoUrl: json['preview_video_url'],
+      instructorId: json['instructor']?['_id'] ?? json['instructor_id'] ?? '',
+      instructorName: json['instructor']?['name'] ?? 'غير محدد',
+      instructorBio: json['instructor']?['bio'] ?? '',
+      instructorPhotoUrl: json['instructor']?['avatar'],
+      level: json['difficulty_level'] ?? 'مبتدئ',
+      category: json['category']?['name'] ?? 'عام',
+      objectives: (json['objectives'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      requirements: (json['requirements'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      modules: [], // Will be loaded separately when needed
+      price: (json['price'] ?? 0).toDouble(),
+      rating: (json['average_rating'] ?? 0).toDouble(),
+      totalRatings: json['total_ratings'] ?? 0,
+      enrolledStudents: json['total_enrollments'] ?? 0,
+      totalDuration: Duration(hours: int.tryParse(json['duration_hours']?.toString() ?? '1') ?? 1),
+      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
+      isFree: (json['price'] ?? 0) == 0,
+      language: json['language'] ?? 'ar',
+      reviews: [], // Will be loaded separately when needed
+      isEnrolled: false, // Will be updated based on cache
+    );
   }
 
   void filterCourses({String? level, String? category, String? searchQuery}) {
@@ -212,17 +145,34 @@ class CoursesProvider extends ChangeNotifier {
 
   Future<void> loadCoursesByCategory(String category) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
-    if (category == 'الكل') {
-      await loadCourses();
-    } else {
-      // Filter mock data by category
-      filterCourses(category: category);
+    try {
+      if (category == 'الكل') {
+        await loadCourses();
+      } else {
+        // Load courses with category filter from API
+        final response = await _apiService.get('/courses', queryParams: {
+          'category_id': category,
+        });
+
+        if (response['data'] != null) {
+          final coursesData = response['data'] as List;
+          _courses = coursesData.map((courseJson) => _convertApiResponseToCourseModel(courseJson)).toList();
+          _filteredCourses = _courses;
+        }
+      }
+    } catch (e) {
+      if (e is ApiException) {
+        _error = e.message;
+      } else {
+        _error = 'فشل تحميل الدورات';
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   void selectCourse(String courseId) {
@@ -237,12 +187,14 @@ class CoursesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<String, dynamic>?> enrollInCourse(String courseId, [String? userId]) async {
+  Future<Map<String, dynamic>?> enrollInCourse(String courseId) async {
     try {
-      // Try to use real enrollment through sync service first
-      if (userId != null) {
-        await _syncService.enrollUserInCourse(userId, courseId);
+      // Call Laravel API to enroll in course
+      final response = await _apiService.post('/enrollments', body: {
+        'course_id': courseId,
+      });
 
+      if (response['status'] == 'success') {
         // Update local state
         final courseIndex = _courses.indexWhere((c) => c.id == courseId);
         if (courseIndex != -1) {
@@ -261,43 +213,93 @@ class CoursesProvider extends ChangeNotifier {
           notifyListeners();
         }
 
-        return {'success': true, 'message': 'تم التسجيل في الدورة بنجاح'};
+        return {
+          'success': true,
+          'message': response['message'] ?? 'تم التسجيل في الدورة بنجاح'
+        };
       } else {
-        // Fallback to mock service
-        final mockService = MockDataService();
-        final response = await mockService.enrollInCourse(courseId);
-
-        // Check if it's a paid course (402 status)
-        if (response['success'] == false && response['error'] != null && response['error'].toString().contains('paid course')) {
-          throw Exception('402: ${response['error']}');
-        }
-
-        // Update local state only if enrollment is successful
-        if (response['success'] == true) {
-          final courseIndex = _courses.indexWhere((c) => c.id == courseId);
-          if (courseIndex != -1) {
-            _courses[courseIndex] = _courses[courseIndex].copyWith(
-              enrolledStudents: _courses[courseIndex].enrolledStudents + 1,
-              isEnrolled: true,
-            );
-
-            // Update cached enrolled courses
-            final enrolledIds = CacheService.getCachedEnrolledCourses() ?? [];
-            if (!enrolledIds.contains(courseId)) {
-              enrolledIds.add(courseId);
-              await CacheService.cacheEnrolledCourses(enrolledIds);
-            }
-
-            notifyListeners();
-          }
-        }
-
-        return response;
+        return {
+          'success': false,
+          'message': response['message'] ?? 'فشل التسجيل في الدورة'
+        };
       }
     } catch (e) {
       _error = e.toString();
       notifyListeners();
+
+      if (e is ApiException) {
+        return {
+          'success': false,
+          'message': e.message
+        };
+      }
+
       rethrow;
+    }
+  }
+
+  Future<CourseModel?> getCourseDetails(String courseId) async {
+    try {
+      final response = await _apiService.get('/courses/$courseId');
+
+      if (response['data'] != null) {
+        return _convertApiResponseToCourseModel(response['data']);
+      }
+
+      return null;
+    } catch (e) {
+      print('Error getting course details: $e');
+      return null;
+    }
+  }
+
+  Future<List<CourseModel>> getFeaturedCourses() async {
+    try {
+      final response = await _apiService.get('/courses/featured');
+
+      if (response['data'] != null) {
+        final coursesData = response['data'] as List;
+        return coursesData.map((courseJson) => _convertApiResponseToCourseModel(courseJson)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('Error getting featured courses: $e');
+      return [];
+    }
+  }
+
+  Future<List<CourseModel>> getLatestCourses() async {
+    try {
+      final response = await _apiService.get('/courses/latest');
+
+      if (response['data'] != null) {
+        final coursesData = response['data'] as List;
+        return coursesData.map((courseJson) => _convertApiResponseToCourseModel(courseJson)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('Error getting latest courses: $e');
+      return [];
+    }
+  }
+
+  Future<List<CourseModel>> searchCourses(String query) async {
+    try {
+      final response = await _apiService.get('/courses/search', queryParams: {
+        'q': query,
+      });
+
+      if (response['data'] != null && response['data']['courses'] != null) {
+        final coursesData = response['data']['courses'] as List;
+        return coursesData.map((courseJson) => _convertApiResponseToCourseModel(courseJson)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('Error searching courses: $e');
+      return [];
     }
   }
 

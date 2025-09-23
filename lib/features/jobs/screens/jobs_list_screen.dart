@@ -1,41 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../widgets/common/raqim_app_bar.dart';
+import '../../../widgets/common/job_card.dart';
+import '../../../models/job_model.dart' as JobModels;
 
-class JobOffer {
-  final String id;
-  final String title;
-  final String company;
-  final String location;
-  final String salary;
-  final String jobType;
-  final String experience;
-  final String companyLogo;
-  final String description;
-  final List<String> requirements;
-  final List<String> benefits;
-  final DateTime postedDate;
-  final List<String> skills;
-  final bool isUrgent;
-
-  JobOffer({
-    required this.id,
-    required this.title,
-    required this.company,
-    required this.location,
-    required this.salary,
-    required this.jobType,
-    required this.experience,
-    required this.companyLogo,
-    required this.description,
-    required this.requirements,
-    required this.benefits,
-    required this.postedDate,
-    required this.skills,
-    required this.isUrgent,
-  });
-}
 
 class JobsListScreen extends StatefulWidget {
   const JobsListScreen({super.key});
@@ -46,8 +15,8 @@ class JobsListScreen extends StatefulWidget {
 
 class _JobsListScreenState extends State<JobsListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<JobOffer> _allJobs = [];
-  List<JobOffer> _filteredJobs = [];
+  List<JobModels.JobOffer> _allJobs = [];
+  List<JobModels.JobOffer> _filteredJobs = [];
   String _selectedFilter = 'الكل';
 
   @override
@@ -59,7 +28,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
   void _loadJobs() {
     // بيانات وهمية لفرص العمل
     _allJobs = [
-      JobOffer(
+      JobModels.JobOffer(
         id: '1',
         title: 'مطور Flutter Senior',
         company: 'شركة التقنية المتقدمة',
@@ -74,8 +43,9 @@ class _JobsListScreenState extends State<JobsListScreen> {
         postedDate: DateTime.now().subtract(const Duration(days: 1)),
         skills: ['Flutter', 'Dart', 'Firebase', 'REST API'],
         isUrgent: true,
+        contactEmail: 'hr@techcompany.com',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: '2',
         title: 'مهندس ذكاء اصطناعي',
         company: 'مؤسسة الذكاء التقني',
@@ -90,8 +60,9 @@ class _JobsListScreenState extends State<JobsListScreen> {
         postedDate: DateTime.now().subtract(const Duration(days: 2)),
         skills: ['Python', 'TensorFlow', 'Machine Learning', 'Deep Learning'],
         isUrgent: false,
+        contactEmail: 'ai-jobs@smarttech.com',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: '3',
         title: 'مطور React Native',
         company: 'ستارت اب التقنية',
@@ -106,8 +77,9 @@ class _JobsListScreenState extends State<JobsListScreen> {
         postedDate: DateTime.now().subtract(const Duration(days: 3)),
         skills: ['React Native', 'JavaScript', 'TypeScript', 'Redux'],
         isUrgent: false,
+        contactEmail: 'careers@techstartup.com',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: '4',
         title: 'محلل بيانات',
         company: 'شركة البيانات الذكية',
@@ -122,8 +94,9 @@ class _JobsListScreenState extends State<JobsListScreen> {
         postedDate: DateTime.now().subtract(const Duration(days: 4)),
         skills: ['SQL', 'Python', 'Power BI', 'Excel'],
         isUrgent: true,
+        contactEmail: 'data-jobs@smartdata.com',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: '5',
         title: 'مطور Backend',
         company: 'تقنيات المستقبل',
@@ -138,8 +111,9 @@ class _JobsListScreenState extends State<JobsListScreen> {
         postedDate: DateTime.now().subtract(const Duration(days: 5)),
         skills: ['Node.js', 'MongoDB', 'AWS', 'Docker'],
         isUrgent: false,
+        contactEmail: 'backend@futuretech.com',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: '6',
         title: 'مصمم UI/UX',
         company: 'وكالة الإبداع الرقمي',
@@ -154,6 +128,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
         postedDate: DateTime.now().subtract(const Duration(days: 6)),
         skills: ['Figma', 'Adobe XD', 'Photoshop', 'UI Design'],
         isUrgent: false,
+        contactEmail: 'design@creativedigital.com',
       ),
     ];
 
@@ -183,10 +158,20 @@ class _JobsListScreenState extends State<JobsListScreen> {
     final isWideScreen = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBackground,
-      appBar: const RaqimAppBar(
-        title: 'فرص العمل',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        title: Text(
+          'الوظائف',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      backgroundColor: AppColors.primaryBackground,
       body: CustomScrollView(
         slivers: [
           // Search and Filter Section - Pinned
@@ -303,7 +288,10 @@ class _JobsListScreenState extends State<JobsListScreen> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final job = _filteredJobs[index];
-            return _buildJobCard(job);
+            return JobCard(
+              job: job,
+              onTap: () => _showJobDetails(job),
+            );
           },
           childCount: _filteredJobs.length,
         ),
@@ -318,7 +306,10 @@ class _JobsListScreenState extends State<JobsListScreen> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final job = _filteredJobs[index];
-            return _buildJobCard(job);
+            return JobCard(
+              job: job,
+              onTap: () => _showJobDetails(job),
+            );
           },
           childCount: _filteredJobs.length,
         ),
@@ -326,35 +317,8 @@ class _JobsListScreenState extends State<JobsListScreen> {
     );
   }
 
-  Widget _buildDesktopLayout() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: _filteredJobs.length,
-      itemBuilder: (context, index) {
-        final job = _filteredJobs[index];
-        return _buildJobCard(job);
-      },
-    );
-  }
 
-  Widget _buildMobileLayout() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _filteredJobs.length,
-      itemBuilder: (context, index) {
-        final job = _filteredJobs[index];
-        return _buildJobCard(job);
-      },
-    );
-  }
-
-  void _showJobDetails(JobOffer job) {
+  void _showJobDetails(JobModels.JobOffer job) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -577,186 +541,6 @@ class _JobsListScreenState extends State<JobsListScreen> {
     }
   }
 
-  Widget _buildJobCard(JobOffer job) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showJobDetails(job),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Company Logo - Circle with first letter
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF2B3990),
-                        const Color(0xFF4A5EC1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      job.company.isNotEmpty ? job.company[0] : 'C',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Job Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Job Title
-                      Text(
-                        job.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // Company Name
-                      Text(
-                        job.company,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF757575),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Location Row
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 16,
-                            color: Color(0xFF757575),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            job.location,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF757575),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Bottom Row - Tags and Salary
-                      Row(
-                        children: [
-                          // Job Type Tag
-                          Flexible(
-                            fit: FlexFit.loose,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F4FD),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                job.jobType,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF2196F3),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Experience Tag (only show if not beginner)
-                          if (!job.experience.contains('1') && !job.experience.contains('مبتدئ'))
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF3E5F5),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  job.experience,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF9C27B0),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          const Spacer(),
-                          // Salary
-                          Flexible(
-                            fit: FlexFit.loose,
-                            child: RichText(
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: job.salary.split(' ')[0],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1A1A1A),
-                                    ),
-                                  ),
-                                  const TextSpan(
-                                    text: '/شهر',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF757575),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   void dispose() {

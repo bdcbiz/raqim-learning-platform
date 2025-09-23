@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/courses_provider.dart';
 import '../../certificates/providers/certificates_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
 import '../../../widgets/common/modern_button.dart';
 import '../../../widgets/common/modern_card.dart';
 
@@ -23,6 +23,31 @@ class CourseDetailsScreen extends StatelessWidget {
 
     if (course == null) {
       return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 1,
+          title: Row(
+            children: [
+              SvgPicture.asset(
+                'assets/images/raqimLogo.svg',
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  AppColors.primaryColor,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'تفاصيل الدورة',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
         backgroundColor: Colors.white,
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -38,13 +63,32 @@ class CourseDetailsScreen extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: RaqimAppBar(
-        title: AppLocalizations.of(context)?.translate('courseDetails') ?? 'تفاصيل الكورس',
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        titleColor: AppColors.primaryColor,
-        logoColor: AppColors.primaryColor,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'تفاصيل الدورة',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [

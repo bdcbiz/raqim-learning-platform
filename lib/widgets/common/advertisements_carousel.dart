@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 
 class AdvertisementCarousel extends StatefulWidget {
@@ -16,10 +17,18 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
 
   final List<Map<String, dynamic>> _advertisements = [
     {
+      'title': 'أدوات الذكاء الاصطناعي',
+      'subtitle': 'اكتشف أفضل أدوات الذكاء الاصطناعي للإنتاجية والتطوير',
+      'buttonText': 'استكشف الأدوات',
+      'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
+      'icon': Icons.auto_awesome,
+      'action': 'ai_tools',
+    },
+    {
       'title': 'احصل على خصم 50%',
       'subtitle': 'على جميع دورات الذكاء الاصطناعي',
       'buttonText': 'ابدأ الآن',
-      'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
+      'gradient': [const Color(0xFFFF6B6B), const Color(0xFFFFE66D)],
       'icon': Icons.discount,
       'code': 'AI50',
     },
@@ -27,22 +36,23 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
       'title': 'تعلم مع الخبراء',
       'subtitle': 'أفضل المدربين في مجال التقنية',
       'buttonText': 'اكتشف المزيد',
-      'gradient': [const Color(0xFFFF6B6B), const Color(0xFFFFE66D)],
+      'gradient': [const Color(0xFF4FACFE), const Color(0xFF00F2FE)],
       'icon': Icons.school,
     },
     {
       'title': 'شهادات معتمدة',
       'subtitle': 'احصل على شهادة معتمدة بعد إتمام الدورة',
       'buttonText': 'تصفح الدورات',
-      'gradient': [const Color(0xFF4FACFE), const Color(0xFF00F2FE)],
+      'gradient': [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
       'icon': Icons.verified,
     },
     {
-      'title': 'دورات جديدة',
-      'subtitle': 'ChatGPT و Midjourney وأدوات الذكاء الاصطناعي',
-      'buttonText': 'استكشف الآن',
-      'gradient': [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
-      'icon': Icons.auto_awesome,
+      'title': 'مكتبة البرومبت',
+      'subtitle': 'اكتشف أفضل البرومبت المجربة من المجتمع',
+      'buttonText': 'استكشف المكتبة',
+      'gradient': [const Color(0xFFBA5370), const Color(0xFFF4A6CD)],
+      'icon': Icons.lightbulb,
+      'action': 'prompt_library',
     },
   ];
 
@@ -232,7 +242,11 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
                   child: ElevatedButton(
                     onPressed: () {
                       // Handle advertisement click
-                      if (ad['code'] != null) {
+                      if (ad['action'] == 'ai_tools') {
+                        context.go('/ai-tools');
+                      } else if (ad['action'] == 'prompt_library') {
+                        context.go('/community/prompts');
+                      } else if (ad['code'] != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('كود الخصم ${ad['code']} تم نسخه'),

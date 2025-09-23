@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,6 +10,8 @@ import '../../../core/theme/responsive_theme.dart';
 import '../../../widgets/common/welcome_header.dart';
 import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
+import '../../../widgets/common/job_card.dart';
+import '../../../models/job_model.dart' as JobModels;
 import '../../../widgets/common/animated_course_card.dart';
 import '../../../widgets/common/modern_course_card.dart' show ModernCourseCard;
 import '../../courses/screens/courses_list_screen.dart';
@@ -18,42 +21,6 @@ import '../../../providers/course_provider.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../jobs/screens/jobs_list_screen.dart';
 
-// Simple JobOffer class for local use
-class JobOffer {
-  final String id;
-  final String title;
-  final String company;
-  final String companyLogo;
-  final String location;
-  final String jobType;
-  final String experience;
-  final String salary;
-  final List<String> skills;
-  final String description;
-  final DateTime postedDate;
-  final bool isUrgent;
-  final String? contactEmail;
-  final List<String>? requirements;
-  final List<String>? benefits;
-
-  JobOffer({
-    required this.id,
-    required this.title,
-    required this.company,
-    required this.companyLogo,
-    required this.location,
-    required this.jobType,
-    required this.experience,
-    required this.salary,
-    required this.skills,
-    required this.description,
-    required this.postedDate,
-    this.isUrgent = false,
-    this.contactEmail,
-    this.requirements,
-    this.benefits,
-  });
-}
 
 class ModernHomeScreen extends StatefulWidget {
   const ModernHomeScreen({super.key});
@@ -108,24 +75,39 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         foregroundColor: Colors.black,
         elevation: 1,
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
-          child: SvgPicture.asset(
-            'assets/images/raqimLogo.svg',
-            height: 28,
-            colorFilter: ColorFilter.mode(
-              AppColors.primaryColor,
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        title: Text(
+        leading: kIsWeb ? null : null,
+        title: kIsWeb ? Text(
           'الرئيسية',
           style: TextStyle(
             color: AppColors.primaryColor,
             fontWeight: FontWeight.bold,
           ),
+        ) : Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 32,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'الرئيسية',
+                  style: TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 32), // لموازنة عرض اللوجو
+          ],
         ),
+        automaticallyImplyLeading: false,
       ),
       backgroundColor: AppColors.primaryBackground,
       body: SafeArea(
@@ -205,6 +187,10 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                 child: ModernSearchField(
                   controller: _searchController,
                   hintText: 'ماذا تود أن تتعلم اليوم؟',
+                  onTap: () {
+                    // Navigate to courses screen with search
+                    context.go('/courses${_searchController.text.isNotEmpty ? "?search=${Uri.encodeComponent(_searchController.text)}" : ""}');
+                  },
                   onChanged: (value) {
                     // Filter courses on the home screen as user types
                     setState(() {
@@ -226,7 +212,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
 
               // Category Pills
               Container(
-                height: 50,
+                height: 40,
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: Scrollbar(
                   thumbVisibility: false,
@@ -268,16 +254,12 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                   children: [
                     Text(
                       'الكورسات الشائعة',
-                      style: ResponsiveAppTextStyles.h2(context),
+                      style: ResponsiveAppTextStyles.h3(context),
                     ),
                     TextButton(
                       onPressed: () {
-                        // Navigate to courses list screen using the modern courses provider
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const CoursesListScreen(),
-                          ),
-                        );
+                        // Navigate to all courses screen
+                        context.go('/courses');
                       },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -315,7 +297,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                   children: [
                     Text(
                       'فرص العمل',
-                      style: ResponsiveAppTextStyles.h2(context),
+                      style: ResponsiveAppTextStyles.h3(context),
                     ),
                     TextButton(
                       onPressed: () {
@@ -449,7 +431,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         itemBuilder: (context, index) {
           final course = popularCourses[index];
           return Container(
-            width: isMobile ? screenWidth * 0.85 : isTablet ? 280 : 300,
+            width: isMobile ? screenWidth * 0.65 : isTablet ? 280 : 300,
             margin: EdgeInsets.only(
               left: index == popularCourses.length - 1 ? 16 : 16,
             ),
@@ -585,7 +567,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         itemBuilder: (context, index) {
           final course = filteredSampleCourses[index];
           return Container(
-            width: isMobile ? screenWidth * 0.85 : isTablet ? 280 : 300,
+            width: isMobile ? screenWidth * 0.65 : isTablet ? 280 : 300,
             margin: EdgeInsets.only(
               right: index == filteredSampleCourses.length - 1 ? 16 : 16,
             ),
@@ -609,7 +591,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
   Widget _buildJobOffers() {
     // Sample job offers data
     final sampleJobs = [
-      JobOffer(
+      JobModels.JobOffer(
         id: 'job-1',
         title: 'مطور Flutter - الرياض',
         company: 'شركة التقنية المتقدمة',
@@ -619,12 +601,14 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         experience: 'مستوى متوسط',
         salary: '8,000 - 12,000 ر.س',
         skills: ['Flutter', 'Dart', 'Firebase', 'REST APIs'],
-        description: 'نبحث عن مطور Flutter محترف للانضمام إلى فريقنا...',
+        description: 'نبحث عن مطور Flutter محترف للانضمام إلى فريقنا التقني المتميز. ستعمل على تطوير تطبيقات جوالة متطورة وتحسين الأداء والتجربة.',
+        requirements: ['خبرة 3+ سنوات في Flutter', 'معرفة قوية بـ Dart', 'خبرة في REST APIs', 'Git و CI/CD'],
+        benefits: ['تأمين صحي شامل', 'مكافآت سنوية', 'بيئة عمل مرنة', 'تطوير مهني مستمر'],
         postedDate: DateTime.now().subtract(const Duration(days: 2)),
         isUrgent: true,
         contactEmail: 'jobs@techcompany.sa',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: 'job-2',
         title: 'مهندس ذكاء اصطناعي',
         company: 'مختبرات الابتكار',
@@ -634,11 +618,13 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         experience: 'مستوى عالي',
         salary: '15,000 - 20,000 ر.س',
         skills: ['Python', 'TensorFlow', 'Machine Learning', 'NLP'],
-        description: 'فرصة مميزة للعمل على مشاريع الذكاء الاصطناعي المتطورة...',
+        description: 'فرصة مميزة للعمل على مشاريع الذكاء الاصطناعي المتطورة. ستقوم بتطوير نماذج تعلم الآلة وتحليل البيانات الضخمة.',
+        requirements: ['ماجستير في علوم الحاسوب أو ما يعادلها', 'خبرة 5+ سنوات في AI/ML', 'Python و TensorFlow/PyTorch', 'معرفة بـ NLP والرؤية الحاسوبية'],
+        benefits: ['راتب تنافسي مميز', 'بودجت للمؤتمرات والتدريب', 'عمل مع فريق عالمي', 'مشاريع بحثية متطورة'],
         postedDate: DateTime.now().subtract(const Duration(days: 5)),
         contactEmail: 'hr@innovationlabs.sa',
       ),
-      JobOffer(
+      JobModels.JobOffer(
         id: 'job-3',
         title: 'محلل بيانات',
         company: 'شركة البيانات الذكية',
@@ -648,7 +634,9 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
         experience: 'مبتدئ',
         salary: '5,000 - 7,000 ر.س',
         skills: ['Python', 'SQL', 'Excel', 'Power BI'],
-        description: 'ابدأ مسيرتك المهنية في مجال تحليل البيانات معنا...',
+        description: 'ابدأ مسيرتك المهنية في مجال تحليل البيانات معنا. ستعمل على تحليل البيانات وإنشاء التقارير والرؤى التحليلية للشركة.',
+        requirements: ['شهادة جامعية في الإحصاء أو الحاسوب', 'معرفة أساسية بـ Python و SQL', 'خبرة في Excel وPower BI', 'مهارات تحليلية قوية'],
+        benefits: ['بيئة تعلم مثالية للمبتدئين', 'تدريب مكثف', 'فرص نمو وترقية', 'مرونة في أوقات العمل'],
         postedDate: DateTime.now().subtract(const Duration(hours: 6)),
         contactEmail: 'careers@smartdata.sa',
       ),
@@ -659,9 +647,9 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
     final isMobile = screenWidth < 600;
 
     if (isMobile) {
-      // Mobile: Use horizontal scrolling ListView to prevent overflow
+      // Mobile: Use horizontal scrolling ListView
       return SizedBox(
-        height: 300, // Increased height to prevent bottom overflow
+        height: 400, // Further increased height to prevent overflow
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
@@ -674,7 +662,18 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
               margin: EdgeInsets.only(
                 right: index == sampleJobs.length - 1 ? 0 : 12, // Fixed margin direction for RTL
               ),
-              child: _buildJobCard(job),
+              child: JobCard(
+              job: job,
+              showDetailedInfo: false,
+              onTap: () {
+                _tracker.trackButtonClick('view_job', additionalData: {
+                  'jobId': job.id,
+                  'company': job.company,
+                  'from': 'home'
+                });
+                _showJobDetailsDialog(context, job);
+              },
+            ),
             );
           },
         ),
@@ -687,198 +686,75 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
             constraints: const BoxConstraints(
               maxWidth: 800, // Limit maximum width
             ),
-            child: _buildJobCard(job),
+            child: JobCard(
+              job: job,
+              showDetailedInfo: false,
+              onTap: () {
+                _tracker.trackButtonClick('view_job', additionalData: {
+                  'jobId': job.id,
+                  'company': job.company,
+                  'from': 'home'
+                });
+                _showJobDetailsDialog(context, job);
+              },
+            ),
           );
         }).toList(),
       );
     }
   }
 
-  void _showJobDetailsDialog(BuildContext context, JobOffer job) {
+  void _showJobDetailsDialog(BuildContext context, JobModels.JobOffer job) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        contentPadding: const EdgeInsets.all(24),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: AppColors.inputBackground,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        job.companyLogo,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.business,
-                            color: AppColors.primaryColor,
-                            size: 30,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          job.title,
-                          style: AppTextStyles.h3.copyWith(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          job.company,
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Job details
-              _buildJobDetailRow('الموقع:', job.location),
-              _buildJobDetailRow('نوع العمل:', job.jobType),
-              _buildJobDetailRow('المستوى:', job.experience),
-              _buildJobDetailRow('الراتب:', job.salary),
-
-              const SizedBox(height: 16),
-
-              // Skills
-              Text(
-                'المهارات المطلوبة:',
-                style: AppTextStyles.cardTitle.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: job.skills.map((skill) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      skill,
-                      style: TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Description
-              Text(
-                'وصف الوظيفة:',
-                style: AppTextStyles.cardTitle.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                job.description,
-                style: AppTextStyles.body,
-              ),
-            ],
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? screenWidth * 0.95 : 600,
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'إغلاق',
-              style: TextStyle(color: AppColors.secondaryText),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                JobCard(
+                  job: job,
+                  showDetailedInfo: true,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showApplicationSuccessSnackBar(context);
+                  }, // Apply action when clicking on job card
+                  onClose: () {
+                    Navigator.of(context).pop();
+                  }, // Close dialog when clicking close button
+                ),
+              ],
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Handle job application
-              _showApplicationSuccessSnackBar(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('تقدم الآن'),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildJobDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: AppTextStyles.small.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.secondaryText,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: AppTextStyles.body,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showApplicationSuccessSnackBar(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('تم إرسال طلبك بنجاح! سيتم التواصل معك قريباً.'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'تم إرسال طلبك بنجاح!',
+                style: TextStyle(fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         backgroundColor: AppColors.success,
@@ -890,260 +766,5 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
     );
   }
 
-  Widget _buildMobileJobsSection() {
-    // Sample job offers data - same as in _buildJobOffers
-    final sampleJobs = [
-      JobOffer(
-        id: 'job-1',
-        title: 'مطور Flutter',
-        company: 'شركة التقنية',
-        companyLogo: 'https://picsum.photos/100/100?random=101',
-        location: 'الرياض، السعودية',
-        jobType: 'دوام كامل',
-        experience: 'مستوى متوسط',
-        salary: '8,000 - 12,000 ر.س',
-        skills: ['Flutter', 'Dart', 'Firebase'],
-        description: 'نبحث عن مطور Flutter محترف...',
-        postedDate: DateTime.now().subtract(const Duration(days: 2)),
-        isUrgent: true,
-        contactEmail: 'jobs@techcompany.sa',
-      ),
-    ];
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title and "View All" button
-        Expanded(
-          flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'فرص العمل',
-                style: ResponsiveAppTextStyles.h2(context),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () {
-                  // Navigate to jobs screen
-                },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  alignment: AlignmentDirectional.centerStart,
-                ),
-                child: Text(
-                  'عرض الكل',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.primaryColor,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        // Job Card
-        Expanded(
-          flex: 3,
-          child: _buildJobCard(sampleJobs[0]),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildJobCard(JobOffer job) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24, left: 8, right: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Track job click
-            _tracker.trackButtonClick('view_job', additionalData: {
-              'jobId': job.id,
-              'company': job.company,
-              'from': 'home'
-            });
-
-            // Show job details dialog or navigate to job details screen
-            _showJobDetailsDialog(context, job);
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Company Logo - Circle with first letter
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF2B3990),
-                        const Color(0xFF4A5EC1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      job.company.isNotEmpty ? job.company[0] : 'C',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Job Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Job Title
-                      Text(
-                        job.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // Company Name
-                      Text(
-                        job.company,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF757575),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Location Row
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 16,
-                            color: Color(0xFF757575),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            job.location,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF757575),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Bottom Row - Tags and Salary
-                      Row(
-                        children: [
-                          // Job Type Tag
-                          Flexible(
-                            fit: FlexFit.loose,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F4FD),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                job.jobType,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF2196F3),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Experience Tag
-                          if (!job.experience.contains('1') && !job.experience.contains('مبتدئ'))
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF3E5F5),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  job.experience,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF9C27B0),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          const Spacer(),
-                          // Salary
-                          Flexible(
-                            fit: FlexFit.loose,
-                            child: RichText(
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: job.salary.split(' ')[0],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1A1A1A),
-                                    ),
-                                  ),
-                                  const TextSpan(
-                                    text: '/شهر',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF757575),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/news_model.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../../services/auth/auth_interface.dart';
-import '../../../services/database/database_service.dart';
+import '../../../services/api/api_service.dart';
+import '../../../core/exceptions/app_exceptions.dart';
+import '../../../core/handlers/error_handler.dart';
 
 class NewsProvider extends ChangeNotifier {
   List<NewsModel> _news = [];
@@ -13,7 +14,7 @@ class NewsProvider extends ChangeNotifier {
   String _selectedCategory = 'الكل';
   String _searchQuery = '';
   String? _selectedNewsId; // المتغير الجديد لتتبع الخبر المحدد
-  final DatabaseService _databaseService = DatabaseService();
+  final ApiService _apiService = ApiService.instance;
 
   List<NewsModel> get news {
     var filteredNews = _allNews;
@@ -51,40 +52,64 @@ class NewsProvider extends ChangeNotifier {
   }
 
   NewsProvider() {
-    loadNews();
+    _initializeProvider();
+  }
+
+  Future<void> _initializeProvider() async {
+    await _apiService.initialize();
+    await loadNews();
   }
 
   Future<void> loadNews() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
-    try {
-      // For demo purposes, using mock data
-      await Future.delayed(const Duration(seconds: 1));
+    final result = await ErrorHandler.safeAsyncCall<List<NewsModel>>(
+      () async {
+        final response = await _apiService.get('/news');
+
+        if (response['data'] != null) {
+          final newsData = response['data'] as List;
+          return newsData.map((newsJson) => _convertApiResponseToNewsModel(newsJson)).toList();
+        } else {
+          throw const NetworkException('Invalid API response structure', code: 'invalid_response');
+        }
+      },
+      context: 'Loading news',
+      fallbackValue: _generateMockNews(),
+    );
+
+    if (result != null) {
+      _allNews = result;
+      _news = _allNews;
+      _error = null;
+    } else {
+      _error = 'فشل تحميل الأخبار';
       _allNews = _generateMockNews();
       _news = _allNews;
-      
-      /* Uncomment for real API integration
-      final response = await http.get(
-        Uri.parse('${AppConstants.newsApiUrl}/everything?q=artificial+intelligence&apiKey=${AppConstants.newsApiKey}'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final articles = data['articles'] as List;
-        _news = articles.map((article) => NewsModel.fromJson(article)).toList();
-      } else {
-        throw Exception('Failed to load news');
-      }
-      */
-      
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _error = 'فشل تحميل الأخبار: ${e.toString()}';
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  NewsModel _convertApiResponseToNewsModel(Map<String, dynamic> json) {
+    return NewsModel(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      description: json['content'] ?? json['description'] ?? '',
+      url: json['url'] ?? '',
+      source: json['source'] ?? 'رقيم',
+      imageUrl: json['image_url'] ?? json['featured_image'] ?? '',
+      category: json['category'] ?? 'عام',
+      publishedAt: DateTime.tryParse(json['published_at'] ?? json['created_at'] ?? '') ?? DateTime.now(),
+      author: json['author'] ?? 'غير محدد',
+      likesCount: json['likes_count'] ?? 0,
+      commentsCount: json['comments_count'] ?? 0,
+      isLiked: json['is_liked'] ?? false,
+      comments: [], // Will be loaded separately when needed
+    );
   }
 
   void setCategory(String category) {
@@ -108,116 +133,86 @@ class NewsProvider extends ChangeNotifier {
   }
 
   Future<void> toggleLike(String newsId, String userId) async {
-    try {
-      final newsIndex = _news.indexWhere((n) => n.id == newsId);
-      if (newsIndex != -1) {
-        final currentNews = _news[newsIndex];
-        final newLikesCount = currentNews.isLiked
-            ? currentNews.likesCount - 1
-            : currentNews.likesCount + 1;
+    final newsIndex = _news.indexWhere((n) => n.id == newsId);
+    if (newsIndex == -1) return;
 
-        _news[newsIndex] = currentNews.copyWith(
-          isLiked: !currentNews.isLiked,
-          likesCount: newLikesCount,
-        );
+    final currentNews = _news[newsIndex];
+    final newLikesCount = currentNews.isLiked
+        ? currentNews.likesCount - 1
+        : currentNews.likesCount + 1;
 
-        notifyListeners();
+    _news[newsIndex] = currentNews.copyWith(
+      isLiked: !currentNews.isLiked,
+      likesCount: newLikesCount,
+    );
+    notifyListeners();
 
-        // Save to database
-        await _databaseService.likeNews(newsId, userId);
+    final success = await ErrorHandler.safeAsyncCall<bool>(
+      () async {
+        await _apiService.post('/news/$newsId/like', body: {
+          'user_id': userId,
+        });
+        return true;
+      },
+      context: 'Toggling news like',
+      fallbackValue: false,
+    );
 
-        // Track user interaction
-        await _databaseService.trackUserInteraction(
-          userId: userId,
-          action: currentNews.isLiked ? 'unlike' : 'like',
-          targetType: 'news',
-          targetId: newsId,
-        );
-      }
-    } catch (e) {
-      _error = 'فشل في تحديث الإعجاب: ${e.toString()}';
+    if (success != true) {
+      _news[newsIndex] = currentNews;
       notifyListeners();
+      _error = 'فشل في تحديث الإعجاب';
     }
   }
 
   Future<void> addComment(String newsId, String content, BuildContext context) async {
+    final newsIndex = _news.indexWhere((n) => n.id == newsId);
+    if (newsIndex == -1) return;
+
+    final currentNews = _news[newsIndex];
+    String userName = 'المستخدم الحالي';
+    String userId = 'current_user';
+
     try {
-      final newsIndex = _news.indexWhere((n) => n.id == newsId);
-      if (newsIndex != -1) {
-        final currentNews = _news[newsIndex];
-        // Get current user information
-        String userName = 'المستخدم الحالي';
-        String userId = 'current_user';
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.currentUser;
 
-        try {
-          // Try to get user from WebAuthService first (for web)
-          final authService = Provider.of<AuthServiceInterface>(context, listen: false);
-          final webUser = authService.currentUser;
-
-          // Fallback to AuthProvider
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-          final authProviderUser = authProvider.currentUser;
-
-          // Use whichever has a user
-          final user = webUser ?? authProviderUser;
-
-          if (user != null) {
-            userName = user.name ?? user.email ?? 'المستخدم الحالي';
-            userId = user.id ?? 'current_user';
-          }
-        } catch (e) {
-          // If there's an error getting user info, use defaults
-          print('Error getting user info for news comment: $e');
-        }
-
-        // Generate a unique comment ID
-        String commentId = 'comment_${DateTime.now().millisecondsSinceEpoch}';
-
-        // Create new comment locally first
-        final newComment = NewsComment(
-          id: commentId,
-          content: content,
-          authorName: userName,
-          createdAt: DateTime.now(),
-        );
-
-        final updatedComments = List<NewsComment>.from(currentNews.comments ?? []);
-        updatedComments.insert(0, newComment);
-
-        _news[newsIndex] = currentNews.copyWith(
-          comments: updatedComments,
-          commentsCount: updatedComments.length,
-        );
-
-        notifyListeners();
-
-        // Try to save to database (but don't fail if it doesn't work)
-        try {
-          await _databaseService.addComment(
-            userId: userId,
-            userName: userName,
-            content: content,
-            targetId: newsId,
-            targetType: 'news',
-          );
-
-          // Track user interaction
-          await _databaseService.trackUserInteraction(
-            userId: userId,
-            action: 'comment',
-            targetType: 'news',
-            targetId: newsId,
-            metadata: {'comment_id': commentId},
-          );
-        } catch (e) {
-          // Database operation failed, but local comment was added successfully
-          print('Warning: Failed to save comment to database, but added locally: $e');
-        }
+      if (user != null) {
+        userName = user.name ?? user.email ?? 'المستخدم الحالي';
+        userId = user.id ?? 'current_user';
       }
     } catch (e) {
-      _error = 'فشل في إضافة التعليق: ${e.toString()}';
-      notifyListeners();
+      ErrorHandler.handleError(e, context: 'Getting user info for comment');
     }
+
+    String commentId = 'comment_${DateTime.now().millisecondsSinceEpoch}';
+
+    final newComment = NewsComment(
+      id: commentId,
+      content: content,
+      authorName: userName,
+      createdAt: DateTime.now(),
+    );
+
+    final updatedComments = List<NewsComment>.from(currentNews.comments ?? []);
+    updatedComments.insert(0, newComment);
+
+    _news[newsIndex] = currentNews.copyWith(
+      comments: updatedComments,
+      commentsCount: updatedComments.length,
+    );
+    notifyListeners();
+
+    await ErrorHandler.safeAsyncCall<void>(
+      () async {
+        await _apiService.post('/news/$newsId/comments', body: {
+          'content': content,
+          'user_id': userId,
+        });
+      },
+      context: 'Adding news comment',
+      showError: false,
+    );
   }
 
   List<NewsModel> _generateMockNews() {

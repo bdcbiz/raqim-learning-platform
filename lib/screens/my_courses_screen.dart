@@ -5,7 +5,7 @@ import '../models/course.dart';
 import '../widgets/course_card.dart';
 import 'course_detail_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
-import '../core/widgets/raqim_app_bar.dart';
+import '../core/theme/app_theme.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
@@ -28,10 +28,21 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: const RaqimAppBar(
-        title: 'دوراتي',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        centerTitle: true,
+        title: Text(
+          'دوراتي',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        automaticallyImplyLeading: false,
       ),
+      backgroundColor: Colors.grey[50],
       body: Consumer<CourseProvider>(
         builder: (context, courseProvider, child) {
           if (courseProvider.isLoading) {

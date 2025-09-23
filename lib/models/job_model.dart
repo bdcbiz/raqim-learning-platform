@@ -9,6 +9,8 @@ class JobOffer {
   final String salary;
   final List<String> skills;
   final String description;
+  final List<String> requirements;
+  final List<String> benefits;
   final DateTime postedDate;
   final bool isUrgent;
   final String contactEmail;
@@ -24,6 +26,8 @@ class JobOffer {
     required this.salary,
     required this.skills,
     required this.description,
+    this.requirements = const [],
+    this.benefits = const [],
     required this.postedDate,
     this.isUrgent = false,
     required this.contactEmail,
@@ -41,6 +45,8 @@ class JobOffer {
       salary: json['salary'] ?? '',
       skills: List<String>.from(json['skills'] ?? []),
       description: json['description'] ?? '',
+      requirements: List<String>.from(json['requirements'] ?? []),
+      benefits: List<String>.from(json['benefits'] ?? []),
       postedDate: DateTime.parse(json['postedDate'] ?? DateTime.now().toIso8601String()),
       isUrgent: json['isUrgent'] ?? false,
       contactEmail: json['contactEmail'] ?? '',
@@ -59,6 +65,8 @@ class JobOffer {
       'salary': salary,
       'skills': skills,
       'description': description,
+      'requirements': requirements,
+      'benefits': benefits,
       'postedDate': postedDate.toIso8601String(),
       'isUrgent': isUrgent,
       'contactEmail': contactEmail,

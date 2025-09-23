@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/widgets/raqim_app_bar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CreatePostScreen extends StatelessWidget {
   const CreatePostScreen({super.key});
@@ -7,8 +8,30 @@ class CreatePostScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const RaqimAppBar(
-        title: 'إنشاء منشور جديد',
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'إنشاء منشور',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
       body: const Center(
         child: Text('نموذج إنشاء المنشور سيكون هنا'),

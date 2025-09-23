@@ -91,33 +91,39 @@ class ModernCourseCard extends StatelessWidget {
             // Content
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Title
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
-                        height: 1.3,
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1F2937),
+                          height: 1.3,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
                     // Instructor
-                    Text(
-                      instructor,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                        height: 1.2,
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        instructor,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                          height: 1.2,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),

@@ -891,25 +891,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
-          child: SvgPicture.asset(
-            'assets/images/raqimLogo.svg',
-            height: 28,
-            colorFilter: ColorFilter.mode(
-              AppColors.primaryColor,
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        title: Text(
+        centerTitle: !kIsWeb,
+        leading: kIsWeb ? null : null,
+        title: kIsWeb ? Text(
           'الملف الشخصي',
           style: TextStyle(
             color: AppColors.primaryColor,
             fontWeight: FontWeight.bold,
           ),
+        ) : Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/raqimLogo.svg',
+              height: 32,
+              colorFilter: ColorFilter.mode(
+                AppColors.primaryColor,
+                BlendMode.srcIn,
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'الملف الشخصي',
+                  style: TextStyle(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 32),
+          ],
         ),
+        automaticallyImplyLeading: false,
       ),
       backgroundColor: Colors.grey[50],
       body: SingleChildScrollView(
