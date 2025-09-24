@@ -12,13 +12,13 @@ import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
 import '../../../widgets/common/job_card.dart';
 import '../../../models/job_model.dart' as JobModels;
-import '../../../widgets/common/animated_course_card.dart';
-import '../../../widgets/common/modern_course_card.dart' show ModernCourseCard;
+import '../../../widgets/common/unified_course_card.dart';
 import '../../courses/screens/courses_list_screen.dart';
 import '../../../services/tracking/interaction_tracker.dart';
 import '../../../widgets/common/advertisements_carousel.dart';
 import '../../../providers/course_provider.dart';
 import '../../../services/auth/auth_interface.dart';
+import '../../../screens/unified_course_detail_screen.dart';
 import '../../jobs/screens/jobs_list_screen.dart';
 
 
@@ -259,7 +259,7 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                     TextButton(
                       onPressed: () {
                         // Navigate to all courses screen
-                        context.go('/courses');
+                        context.push('/courses');
                       },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -437,20 +437,18 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
             ),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: AnimatedCourseCard(
-                title: course.title,
-                instructor: course.instructorName,
-                imageUrl: course.thumbnail ?? 'https://picsum.photos/400/300?random=${course.id}',
-                category: course.category,
-                studentsCount: course.totalStudents,
-                price: course.price == 0 ? 'مجاني' : '${course.price} ريال',
-                rating: course.rating,
-                categoryColor: ModernCourseCard.getCategoryColor(course.category),
+              child: UnifiedCourseCard(
+                course: course,
                 onTap: () {
                 // Track course click
                 _tracker.trackButtonClick('view_course', additionalData: {'courseId': course.id, 'from': 'home'});
-                // Navigate to course details
-                context.go('/course/${course.id}');
+                // Navigate to unified course details
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UnifiedCourseDetailScreen(course: course),
+                  ),
+                );
               },
               ),
             ),
@@ -571,16 +569,16 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
             margin: EdgeInsets.only(
               right: index == filteredSampleCourses.length - 1 ? 16 : 16,
             ),
-            child: AnimatedCourseCard(
-              title: course['title'] as String,
-              instructor: course['instructor'] as String,
-              imageUrl: course['image'] as String,
-              category: course['category'] as String,
-              studentsCount: 500,
-              price: course['price'] as String,
-              rating: course['rating'] as double,
-              categoryColor: ModernCourseCard.getCategoryColor(course['category'] as String),
-              onTap: () => context.go('/course/${course['id']}'),
+            child: UnifiedCourseCard(
+              course: course,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UnifiedCourseDetailScreen(course: course),
+                  ),
+                );
+              },
             ),
           );
         },

@@ -13,6 +13,11 @@ class MockDataService {
   }
 
   // Mock courses data
+  // Get all courses as List<CourseModel> directly
+  List<CourseModel> getAllCourses() {
+    return _generateMockCourses();
+  }
+
   Future<Map<String, dynamic>> getCourses({
     String? category,
     String? level,
@@ -188,7 +193,7 @@ class MockDataService {
         instructorBio: 'مهندس ذكاء اصطناعي في شركة تقنية رائدة',
         level: 'متوسط',
         category: 'رؤية الحاسوب',
-        isEnrolled: true,
+        isEnrolled: false,
         objectives: [
           'فهم CNN و شبكات التصنيف',
           'بناء أنظمة كشف الأجسام',
@@ -214,6 +219,7 @@ class MockDataService {
         instructorBio: 'خبير في مجال الذكاء الاصطناعي مع خبرة 10 سنوات',
         level: 'مبتدئ',
         category: 'البرمجة',
+        isEnrolled: true,
         objectives: [
           'أساسيات لغة Python',
           'المكتبات الأساسية للذكاء الاصطناعي',
@@ -240,7 +246,7 @@ class MockDataService {
         instructorBio: 'باحثة في مجال NLP مع خبرة 8 سنوات',
         level: 'متوسط',
         category: 'الذكاء التوليدي',
-        isEnrolled: true,
+        isEnrolled: false,
         objectives: [
           'فهم تقنيات GPT وLLMs',
           'بناء تطبيقات باستخدام APIs',

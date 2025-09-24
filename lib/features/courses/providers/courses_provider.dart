@@ -176,15 +176,166 @@ class CoursesProvider extends ChangeNotifier {
   }
 
   void selectCourse(String courseId) {
-    _selectedCourse = _courses.firstWhere(
-      (course) => course.id == courseId,
-      orElse: () => _courses.first,
-    );
-    
+    // First try to find in filtered courses (sample data)
+    CourseModel? foundCourse;
+
+    // Check in filtered courses first (includes sample data)
+    if (_filteredCourses.isNotEmpty) {
+      try {
+        foundCourse = _filteredCourses.firstWhere((course) => course.id == courseId);
+      } catch (e) {
+        // Course not found in filtered courses
+      }
+    }
+
+    // If not found, check in all courses
+    if (foundCourse == null && _courses.isNotEmpty) {
+      try {
+        foundCourse = _courses.firstWhere((course) => course.id == courseId);
+      } catch (e) {
+        // Course not found in all courses
+      }
+    }
+
+    // If still not found, create a mock course with the given ID
+    if (foundCourse == null) {
+      foundCourse = _createMockCourseById(courseId);
+    }
+
+    _selectedCourse = foundCourse;
+
     // Add to recently viewed
     CacheService.addToRecentlyViewed(courseId);
-    
+
     notifyListeners();
+  }
+
+  CourseModel _createMockCourseById(String courseId) {
+    // Create mock courses that match the sample data from courses_list_screen.dart
+    final mockCourses = {
+      'sample-1': CourseModel(
+        id: 'sample-1',
+        title: 'مقدمة في تعلم الآلة',
+        description: 'دورة شاملة لتعلم أساسيات الذكاء الاصطناعي وتعلم الآلة من الصفر. ستتعلم المفاهيم الأساسية والتطبيقات العملية.',
+        thumbnailUrl: 'https://picsum.photos/400/300?random=31',
+        instructorId: 'instructor-1',
+        instructorName: 'د. أحمد الرشيد',
+        instructorBio: 'خبير في الذكاء الاصطناعي مع أكثر من 10 سنوات من الخبرة',
+        level: 'مبتدئ',
+        category: 'تعلم الآلة',
+        objectives: [
+          'فهم المفاهيم الأساسية لتعلم الآلة',
+          'تطبيق خوارزميات التعلم المختلفة',
+          'بناء مشاريع عملية'
+        ],
+        requirements: [
+          'معرفة أساسية بالرياضيات',
+          'خبرة بسيطة في البرمجة'
+        ],
+        price: 299.0,
+        rating: 4.8,
+        totalRatings: 245,
+        enrolledStudents: 1250,
+        totalDuration: Duration(hours: 40),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isFree: false,
+        language: 'ar',
+        modules: [],
+        reviews: [],
+        isEnrolled: false,
+      ),
+      'sample-2': CourseModel(
+        id: 'sample-2',
+        title: 'أساسيات معالجة اللغة الطبيعية',
+        description: 'تعلم كيفية معالجة النصوص والتعامل مع اللغة الطبيعية باستخدام تقنيات الذكاء الاصطناعي الحديثة.',
+        thumbnailUrl: 'https://picsum.photos/400/300?random=32',
+        instructorId: 'instructor-2',
+        instructorName: 'د. سارة جونسون',
+        instructorBio: 'متخصصة في معالجة اللغات الطبيعية والذكاء الاصطناعي',
+        level: 'متوسط',
+        category: 'معالجة اللغات',
+        objectives: [
+          'فهم تقنيات معالجة النصوص',
+          'تطبيق خوارزميات NLP',
+          'بناء تطبيقات ذكية للنصوص'
+        ],
+        requirements: [
+          'معرفة أساسية بتعلم الآلة',
+          'خبرة في Python'
+        ],
+        price: 599.0,
+        rating: 4.9,
+        totalRatings: 189,
+        enrolledStudents: 890,
+        totalDuration: Duration(hours: 50),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isFree: false,
+        language: 'ar',
+        modules: [],
+        reviews: [],
+        isEnrolled: false,
+      ),
+      'sample-3': CourseModel(
+        id: 'sample-3',
+        title: 'الرؤية الحاسوبية والتعلم العميق',
+        description: 'دورة متقدمة في الرؤية الحاسوبية باستخدام تقنيات التعلم العميق والشبكات العصبية.',
+        thumbnailUrl: 'https://picsum.photos/400/300?random=33',
+        instructorId: 'instructor-3',
+        instructorName: 'أ.د. عمر حسان',
+        instructorBio: 'أستاذ الذكاء الاصطناعي والرؤية الحاسوبية',
+        level: 'متقدم',
+        category: 'رؤية الحاسوب',
+        objectives: [
+          'إتقان تقنيات الرؤية الحاسوبية',
+          'تطبيق الشبكات العصبية العميقة',
+          'تطوير تطبيقات متقدمة'
+        ],
+        requirements: [
+          'خبرة قوية في تعلم الآلة',
+          'معرفة بالرياضيات المتقدمة'
+        ],
+        price: 799.0,
+        rating: 4.7,
+        totalRatings: 156,
+        enrolledStudents: 650,
+        totalDuration: Duration(hours: 60),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isFree: false,
+        language: 'ar',
+        modules: [],
+        reviews: [],
+        isEnrolled: false,
+      ),
+    };
+
+    return mockCourses[courseId] ?? CourseModel(
+      id: courseId,
+      title: 'دورة تعليمية',
+      description: 'وصف الدورة غير متوفر حالياً',
+      thumbnailUrl: 'https://picsum.photos/400/300?random=1',
+      instructorId: 'default-instructor',
+      instructorName: 'مدرب معتمد',
+      instructorBio: '',
+      level: 'مبتدئ',
+      category: 'عام',
+      objectives: ['تعلم مهارات جديدة'],
+      requirements: ['لا توجد متطلبات خاصة'],
+      price: 0.0,
+      rating: 4.5,
+      totalRatings: 100,
+      enrolledStudents: 500,
+      totalDuration: Duration(hours: 20),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      isFree: true,
+      language: 'ar',
+      modules: [],
+      reviews: [],
+      isEnrolled: false,
+    );
   }
 
   Future<Map<String, dynamic>?> enrollInCourse(String courseId) async {

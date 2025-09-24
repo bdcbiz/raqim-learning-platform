@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/course_provider.dart';
-import '../widgets/common/animated_course_card.dart';
-import '../widgets/common/modern_course_card.dart' show ModernCourseCard;
-import 'course_detail_screen.dart';
+import '../widgets/common/elegant_course_card.dart';
+import '../widgets/common/modern_search_field.dart';
+import '../widgets/common/unified_filter_section.dart';
+import 'unified_course_detail_screen.dart';
 import '../core/theme/app_theme.dart';
 
 class CoursesScreen extends StatefulWidget {
@@ -78,16 +79,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
         foregroundColor: Colors.black,
         elevation: 1,
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(12),
-          child: SvgPicture.asset(
-            'assets/images/raqimLogo.svg',
-            height: 28,
-            colorFilter: ColorFilter.mode(
-              AppColors.primaryColor,
-              BlendMode.srcIn,
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'الدورات',
@@ -98,7 +92,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
         ),
       ),
       backgroundColor: Colors.grey[50],
-      body: Consumer<CourseProvider>(
+      body: GestureDetector(
+        onTap: () {
+          if (_showFilters) {
+            setState(() {
+              _showFilters = false;
+            });
+          }
+        },
+        child: Consumer<CourseProvider>(
         builder: (context, courseProvider, child) {
           if (courseProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -163,560 +165,196 @@ class _CoursesScreenState extends State<CoursesScreen> {
                 return false;
               }
             }
-            if (selectedLevel != null && course.level != selectedLevel) {
-              return false;
+            if (selectedLevel != null) {
+              // Map Arabic level names to English values for comparison
+              String? levelToCheck;
+              switch (selectedLevel) {
+                case 'مبتدئ':
+                  levelToCheck = 'beginner';
+                  break;
+                case 'متوسط':
+                  levelToCheck = 'intermediate';
+                  break;
+                case 'متقدم':
+                  levelToCheck = 'advanced';
+                  break;
+                default:
+                  levelToCheck = selectedLevel;
+              }
+              if (course.level != levelToCheck) {
+                return false;
+              }
             }
             return true;
           }).toList();
 
-          return RefreshIndicator(
-            onRefresh: () => courseProvider.loadCourses(),
-            child: CustomScrollView(
-              slivers: [
-                // Search Bar with Filter
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Search Bar
-                        Row(
+          return Stack(
+            children: [
+              // Main content
+              RefreshIndicator(
+                onRefresh: () => courseProvider.loadCourses(),
+                child: CustomScrollView(
+                  slivers: [
+                    // Search Bar only
+                    SliverToBoxAdapter(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        child: ModernSearchField(
+                          controller: _searchController,
+                          hintText: 'ابحث عن دورة...',
+                          onChanged: (value) {
+                            setState(() {
+                              // Search logic will be handled by parent
+                            });
+                          },
+                          suffixIcon: Icons.filter_list,
+                          onSuffixIconTap: () {
+                            setState(() {
+                              _showFilters = !_showFilters;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    // Results count
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: TextField(
-                                  controller: _searchController,
-                                  decoration: InputDecoration(
-                                    hintText: 'ابحث عن الدورات...',
-                                    hintStyle: TextStyle(color: Colors.grey[400]),
-                                    prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  ),
-                                ),
-                              ),
+                            Text(
+                              'النتائج',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(width: 12),
-                            // Filter Button
-                            Container(
-                              decoration: BoxDecoration(
-                                color: _showFilters ? AppColors.primaryColor : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.filter_list,
-                                  color: _showFilters ? Colors.white : AppColors.primaryColor,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showFilters = !_showFilters;
-                                  });
-                                },
-                              ),
+                            Text(
+                              '${filteredCourses.length} دورة',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ],
                         ),
-                        // Filters Section (Animated)
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          height: _showFilters ? null : 0,
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 300),
-                            opacity: _showFilters ? 1 : 0,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 16),
-                                Text(
-                                  'الفئات',
-                                  style: Theme.of(context).textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      // Category filter
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('جميع الفئات'),
-                                          selected: selectedCategory == null,
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('الذكاء الاصطناعي'),
-                                          selected: selectedCategory == 'الذكاء الاصطناعي',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'الذكاء الاصطناعي'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('تعلم الآلة'),
-                                          selected: selectedCategory == 'تعلم الآلة',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'تعلم الآلة'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('معالجة اللغات'),
-                                          selected: selectedCategory == 'معالجة اللغات',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'معالجة اللغات'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('رؤية الحاسوب'),
-                                          selected: selectedCategory == 'رؤية الحاسوب',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'رؤية الحاسوب'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('التعلم العميق'),
-                                          selected: selectedCategory == 'التعلم العميق',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'التعلم العميق'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('Python'),
-                                          selected: selectedCategory == 'Python',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'Python'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('علم البيانات'),
-                                          selected: selectedCategory == 'علم البيانات',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'علم البيانات'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('البرمجة'),
-                                          selected: selectedCategory == 'البرمجة',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'البرمجة'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('الذكاء التوليدي'),
-                                          selected: selectedCategory == 'الذكاء التوليدي',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'الذكاء التوليدي'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('التقنية'),
-                                          selected: selectedCategory == 'technology',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedCategory = selected
-                                                  ? 'technology'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'المستويات',
-                                  style: Theme.of(context).textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      // Level filter
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('جميع المستويات'),
-                                          selected: selectedLevel == null,
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedLevel = null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('مبتدئ'),
-                                          selected: selectedLevel == 'beginner',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedLevel = selected
-                                                  ? 'beginner'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('متوسط'),
-                                          selected: selectedLevel == 'intermediate',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedLevel = selected
-                                                  ? 'intermediate'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        child: ChoiceChip(
-                                          label: const Text('متقدم'),
-                                          selected: selectedLevel == 'advanced',
-                                          onSelected: (selected) {
-                                            setState(() {
-                                              selectedLevel = selected
-                                                  ? 'advanced'
-                                                  : null;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                // Results count
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'النتائج',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '${filteredCourses.length} دورة',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                // Courses grid
-                if (filteredCourses.isEmpty)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey[400],
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                    // Courses grid
+                    if (filteredCourses.isEmpty)
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'لا توجد دورات متطابقة',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'جرب تغيير الفلاتر',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.grey[600]),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'لا توجد دورات متطابقة',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'جرب تغيير الفلاتر',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((context, index) {
+                            final course = filteredCourses[index];
+                            return ElegantCourseCard(
+                              course: course,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => UnifiedCourseDetailScreen(course: course),
+                                  ),
+                                );
+                              },
+                            );
+                          }, childCount: filteredCourses.length),
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  ],
+                ),
+              ),
+
+              // Filter overlay
+              if (_showFilters)
+                Positioned(
+                  top: 90, // Position below search bar
+                  left: 16,
+                  right: 16,
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).size.width > 600
-                            ? 3
-                            : 2,
-                        childAspectRatio: 1.05,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                      child: UnifiedFilterSection(
+                        isVisible: true,
+                        filters: const [
+                          // Categories
+                          FilterChipData(label: 'جميع الفئات', value: '', type: FilterType.category),
+                          FilterChipData(label: 'الذكاء الاصطناعي', value: 'الذكاء الاصطناعي', type: FilterType.category),
+                          FilterChipData(label: 'تعلم الآلة', value: 'تعلم الآلة', type: FilterType.category),
+                          FilterChipData(label: 'معالجة اللغات', value: 'معالجة اللغات', type: FilterType.category),
+                          FilterChipData(label: 'رؤية الحاسوب', value: 'رؤية الحاسوب', type: FilterType.category),
+                          FilterChipData(label: 'التعلم العميق', value: 'التعلم العميق', type: FilterType.category),
+                          FilterChipData(label: 'Python', value: 'Python', type: FilterType.category),
+                          FilterChipData(label: 'علم البيانات', value: 'علم البيانات', type: FilterType.category),
+                          FilterChipData(label: 'البرمجة', value: 'البرمجة', type: FilterType.category),
+                          FilterChipData(label: 'الذكاء التوليدي', value: 'الذكاء التوليدي', type: FilterType.category),
+                          FilterChipData(label: 'التقنية', value: 'technology', type: FilterType.category),
+
+                          // Levels
+                          FilterChipData(label: 'جميع المستويات', value: '', type: FilterType.level),
+                          FilterChipData(label: 'مبتدئ', value: 'beginner', type: FilterType.level),
+                          FilterChipData(label: 'متوسط', value: 'intermediate', type: FilterType.level),
+                          FilterChipData(label: 'متقدم', value: 'advanced', type: FilterType.level),
+                        ],
+                        selectedCategory: selectedCategory,
+                        selectedLevel: selectedLevel ?? '',
+                        onCategoryChanged: (value) {
+                          setState(() {
+                            selectedCategory = value == '' ? null : value;
+                          });
+                        },
+                        onLevelChanged: (value) {
+                          setState(() {
+                            selectedLevel = value == '' ? null : value;
+                          });
+                        },
                       ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final course = filteredCourses[index];
-                        return CoursesScreenCard(
-                          course: course,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CourseDetailScreen(course: course),
-                              ),
-                            );
-                          },
-                        );
-                      }, childCount: filteredCourses.length),
                     ),
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: 20)),
-              ],
-            ),
+                ),
+            ],
           );
         },
-      ),
-    );
-  }
-}
-
-class CoursesScreenCard extends StatelessWidget {
-  final dynamic course;
-  final VoidCallback onTap;
-
-  const CoursesScreenCard({
-    super.key,
-    required this.course,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Course thumbnail with status overlay
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 10,
-                    child: Container(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                      child: course.thumbnail != null
-                          ? Image.network(
-                              course.thumbnail!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.play_circle_outline,
-                                  size: 32,
-                                  color: Colors.white70,
-                                );
-                              },
-                            )
-                          : const Icon(
-                              Icons.play_circle_outline,
-                              size: 32,
-                              color: Colors.white70,
-                            ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: course.price == 0 ? Colors.green : Colors.blue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      course.price == 0 ? 'مجاني' : '${course.price} ريال',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // Course info - Fixed height container
-            Container(
-              height: 60,
-              padding: const EdgeInsets.all(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Title only
-                  Text(
-                    course.titleAr ?? course.title,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  // Bottom row with stats and button
-                  Row(
-                    children: [
-                      // Small rating
-                      Icon(
-                        Icons.star,
-                        size: 10,
-                        color: Colors.amber,
-                      ),
-                      Text(
-                        '${course.rating?.toStringAsFixed(1) ?? '4.5'}',
-                        style: const TextStyle(
-                          fontSize: 7,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Simple price or button
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: course.price == 0 ? Colors.green.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'تفاصيل',
-                          style: TextStyle(
-                            fontSize: 7,
-                            color: course.price == 0 ? Colors.green : Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
 }
+

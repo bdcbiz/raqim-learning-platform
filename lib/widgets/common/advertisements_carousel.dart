@@ -243,7 +243,7 @@ class _AdvertisementCarouselState extends State<AdvertisementCarousel> {
                     onPressed: () {
                       // Handle advertisement click
                       if (ad['action'] == 'ai_tools') {
-                        context.go('/ai-tools');
+                        context.push('/ai-tools');
                       } else if (ad['action'] == 'prompt_library') {
                         context.go('/community/prompts');
                       } else if (ad['code'] != null) {

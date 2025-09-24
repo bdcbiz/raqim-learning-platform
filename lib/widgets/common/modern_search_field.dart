@@ -30,13 +30,13 @@ class ModernSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowColor,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -45,25 +45,53 @@ class ModernSearchField extends StatelessWidget {
         onChanged: onChanged,
         onTap: onTap,
         enabled: enabled,
-        style: textStyle ?? AppTextStyles.body.copyWith(fontSize: 14),
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.black87,
+        ),
         decoration: InputDecoration(
-          hintText: hintText ?? 'ماذا تود أن تتعلم اليوم؟',
-          hintStyle: AppTextStyles.bodySecondary.copyWith(fontSize: 14),
+          hintText: hintText ?? 'ابحث عن دورة...',
+          hintStyle: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 16,
+          ),
           prefixIcon: Icon(
             prefixIcon ?? Icons.search,
-            color: AppColors.secondaryText,
+            color: AppColors.primaryColor,
+            size: 22,
           ),
           suffixIcon: suffixIcon != null
               ? IconButton(
                   onPressed: onSuffixIconTap,
                   icon: Icon(
                     suffixIcon,
-                    color: AppColors.secondaryText,
+                    color: AppColors.primaryColor,
+                    size: 22,
                   ),
                 )
               : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Colors.grey[200]!,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: AppColors.primaryColor,
+              width: 2,
+            ),
+          ),
+          filled: true,
+          fillColor: Colors.grey[50],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );

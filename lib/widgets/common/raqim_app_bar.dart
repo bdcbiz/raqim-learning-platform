@@ -31,7 +31,7 @@ class RaqimAppBar extends StatelessWidget implements PreferredSizeWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: AppColors.primaryText,
+                color: AppColors.primaryColor,
               ),
               overflow: TextOverflow.ellipsis,
             )

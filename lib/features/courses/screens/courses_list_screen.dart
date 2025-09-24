@@ -9,8 +9,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../widgets/common/modern_search_field.dart';
 import '../../../widgets/common/pill_button.dart';
-import '../../../widgets/common/animated_course_card.dart';
-import '../../../widgets/common/modern_course_card.dart' show ModernCourseCard;
+import '../../../widgets/common/unified_course_card.dart';
+import '../../../widgets/common/unified_filter_section.dart';
 
 class CoursesListScreen extends StatefulWidget {
   final bool showOnlyEnrolled;
@@ -185,37 +185,42 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         ? coursesProvider.courses.where((course) => course.isEnrolled == true).toList()
         : coursesProvider.courses.cast<dynamic>();
 
-    // If no courses available or too few courses, show sample courses
-    if ((displayCourses.isEmpty || displayCourses.length < 6) && !coursesProvider.isLoading) {
-      var sampleCourses = _getSampleCourses();
-
-      // Apply category filter to sample courses if selected
+    // Apply filters to real courses data
+    if (displayCourses.isNotEmpty) {
+      // Apply category filter
       if (_selectedCategory != null && _selectedCategory != 'all') {
-        sampleCourses = sampleCourses.where((course) {
-          final courseCategory = course['category'] as String?;
+        displayCourses = displayCourses.where((course) {
+          final courseCategory = course is Map ? course['category'] : course.category;
           return courseCategory == _selectedCategory;
         }).toList();
       }
 
-      // Apply level filter to sample courses if selected
+      // Apply level filter
       if (_selectedLevel != null && _selectedLevel!.isNotEmpty) {
-        sampleCourses = sampleCourses.where((course) {
-          final courseLevel = course['level'] as String?;
+        displayCourses = displayCourses.where((course) {
+          final courseLevel = course is Map ? course['level'] : course.level;
           return courseLevel == _selectedLevel;
         }).toList();
       }
 
-      // Apply search filter to sample courses
+      // Apply search filter
       if (_searchController.text.isNotEmpty) {
         final searchQuery = _searchController.text.toLowerCase();
-        sampleCourses = sampleCourses.where((course) {
-          final title = (course['title'] as String? ?? '').toLowerCase();
-          final instructor = (course['instructorName'] as String? ?? '').toLowerCase();
+        displayCourses = displayCourses.where((course) {
+          final title = course is Map
+              ? (course['title'] as String? ?? '').toLowerCase()
+              : course.titleAr.toLowerCase();
+          final instructor = course is Map
+              ? (course['instructorName'] as String? ?? '').toLowerCase()
+              : course.instructorName.toLowerCase();
           return title.contains(searchQuery) || instructor.contains(searchQuery);
         }).toList();
       }
+    }
 
-      displayCourses = sampleCourses;
+    // Fallback to sample courses only if no real courses available
+    if (displayCourses.isEmpty && !coursesProvider.isLoading) {
+      displayCourses = _getSampleCourses();
     }
 
     return Scaffold(
@@ -224,43 +229,49 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         foregroundColor: Colors.black,
         elevation: 1,
         centerTitle: !kIsWeb,
-        leading: kIsWeb ? null : null,
+        leading: kIsWeb ? null : Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SvgPicture.asset(
+            'assets/images/raqimLogo.svg',
+            height: 32,
+            colorFilter: ColorFilter.mode(
+              AppColors.primaryColor,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
         title: kIsWeb ? Text(
           'قائمة الدورات',
           style: TextStyle(
             color: AppColors.primaryColor,
             fontWeight: FontWeight.bold,
           ),
-        ) : Row(
-          children: [
-            SvgPicture.asset(
-              'assets/images/raqimLogo.svg',
-              height: 32,
-              colorFilter: ColorFilter.mode(
-                AppColors.primaryColor,
-                BlendMode.srcIn,
-              ),
+        ) : Center(
+          child: Text(
+            'قائمة الدورات',
+            style: TextStyle(
+              color: AppColors.primaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'قائمة الدورات',
-                  style: TextStyle(
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 32),
-          ],
+          ),
         ),
         automaticallyImplyLeading: false,
       ),
       backgroundColor: AppColors.primaryBackground,
-      body: Column(
-        children: [
+      body: GestureDetector(
+        onTap: () {
+          if (_showFilters) {
+            setState(() {
+              _showFilters = false;
+            });
+          }
+        },
+        child: Stack(
+          children: [
+            // Main content
+            Column(
+              children: [
           // Desktop Header for wide screens
           if (isWideScreen)
             Container(
@@ -326,155 +337,6 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                   ],
                 ),
 
-                // Animated Filter Section
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  child: _showFilters
-                      ? Column(
-                          children: [
-                            const SizedBox(height: 20),
-                            // Filter Categories Header
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'الفلاتر',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _selectedCategory = null;
-                                      _selectedLevel = null;
-                                      _selectedPriceFilter = null;
-                                    });
-                                    coursesProvider.filterCourses(
-                                      searchQuery: _searchController.text,
-                                    );
-                                  },
-                                  child: Text(
-                                    'مسح الكل',
-                                    style: TextStyle(
-                                      color: AppColors.primaryColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            // Filter Categories
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // By Category
-                                Text(
-                                  'حسب الفئة:',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _getCategoryFilters(context).map((category) {
-                                    final isSelected = _selectedCategory == category['value'];
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedCategory = _selectedCategory == category['value']
-                                              ? null
-                                              : category['value'] as String?;
-                                        });
-                                        coursesProvider.filterCourses(
-                                          searchQuery: _searchController.text,
-                                          category: _selectedCategory ?? 'الكل',
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.primaryColor : Colors.transparent,
-                                          border: Border.all(
-                                            color: isSelected ? AppColors.primaryColor : Colors.grey[300]!,
-                                          ),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Text(
-                                          category['label'] as String,
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.white : Colors.grey[700],
-                                            fontSize: 12,
-                                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                                const SizedBox(height: 16),
-                                // By Level
-                                Text(
-                                  'حسب المستوى:',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _getLevelFilters(context).map((level) {
-                                    final isSelected = _selectedLevel == level['value'];
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedLevel = _selectedLevel == level['value']
-                                              ? null
-                                              : level['value'] as String?;
-                                        });
-                                        coursesProvider.filterCourses(
-                                          searchQuery: _searchController.text,
-                                          level: _selectedLevel ?? '',
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.primaryColor : Colors.transparent,
-                                          border: Border.all(
-                                            color: isSelected ? AppColors.primaryColor : Colors.grey[300]!,
-                                          ),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Text(
-                                          level['label'] as String,
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.white : Colors.grey[700],
-                                            fontSize: 12,
-                                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-
                 // Original filters are now hidden since we have them in the search bar icon
               ],
             ),
@@ -505,35 +367,25 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                       )
                     : RefreshIndicator(
                         onRefresh: () => coursesProvider.loadCourses(),
-                        child: ListView.builder(
+                        child: GridView.builder(
                           padding: const EdgeInsets.all(16),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                            childAspectRatio: 0.75,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                           itemCount: displayCourses.length,
                           itemBuilder: (context, index) {
                             final course = displayCourses[index];
-
-                            // Handle both Map and CourseModel objects
                             final courseId = course is Map ? course['id'] : course.id;
-                            final thumbnailUrl = course is Map ? course['thumbnailUrl'] : course.thumbnailUrl;
-                            final category = course is Map ? course['category'] : course.category;
-                            final price = course is Map ? course['price'] : course.price;
-                            final rating = course is Map ? course['rating'] : course.rating;
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              child: AnimatedCourseCard(
-                                title: _getLocalizedCourseTitle(course, context),
-                                instructor: _getLocalizedInstructorName(course, context),
-                                imageUrl: thumbnailUrl ?? '',
-                                category: category ?? 'تعلم الآلة',
-                                studentsCount: 500,
-                                price: (price == 0 || price == 0.0) ? 'مجاني' : '${price?.toInt() ?? 0} ر.س',
-                                rating: rating?.toDouble() ?? 4.5,
-                                categoryColor: ModernCourseCard.getCategoryColor(category ?? 'تعلم الآلة'),
-                                onTap: () {
-                                  Provider.of<CoursesProvider>(context, listen: false).selectCourse(courseId);
-                                  context.go('/course/$courseId');
-                                },
-                              ),
+                            return UnifiedCourseCard(
+                              course: course,
+                              onTap: () {
+                                Provider.of<CoursesProvider>(context, listen: false).selectCourse(courseId);
+                                context.go('/course/$courseId');
+                              },
                             );
                           },
                         ),
@@ -541,95 +393,70 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
           ),
         ],
       ),
+
+            // Filter overlay
+            if (_showFilters)
+              Positioned(
+                top: 150, // Position below search bar
+                left: 16,
+                right: 16,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: UnifiedFilterSection(
+                      isVisible: true,
+                      filters: const [
+                        // Categories
+                        FilterChipData(label: 'جميع الفئات', value: '', type: FilterType.category),
+                        FilterChipData(label: 'تعلم الآلة', value: 'تعلم الآلة', type: FilterType.category),
+                        FilterChipData(label: 'معالجة اللغات', value: 'معالجة اللغات', type: FilterType.category),
+                        FilterChipData(label: 'رؤية الحاسوب', value: 'رؤية الحاسوب', type: FilterType.category),
+                        FilterChipData(label: 'التعلم العميق', value: 'التعلم العميق', type: FilterType.category),
+                        FilterChipData(label: 'Python', value: 'Python', type: FilterType.category),
+                        FilterChipData(label: 'علم البيانات', value: 'علم البيانات', type: FilterType.category),
+                        FilterChipData(label: 'البرمجة', value: 'البرمجة', type: FilterType.category),
+                        FilterChipData(label: 'الذكاء الاصطناعي', value: 'الذكاء الاصطناعي', type: FilterType.category),
+
+                        // Levels
+                        FilterChipData(label: 'جميع المستويات', value: '', type: FilterType.level),
+                        FilterChipData(label: 'مبتدئ', value: 'مبتدئ', type: FilterType.level),
+                        FilterChipData(label: 'متوسط', value: 'متوسط', type: FilterType.level),
+                        FilterChipData(label: 'متقدم', value: 'متقدم', type: FilterType.level),
+                      ],
+                      selectedCategory: _selectedCategory,
+                      selectedLevel: _selectedLevel ?? '',
+                      onCategoryChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value == '' ? null : value;
+                        });
+                      },
+                      onLevelChanged: (value) {
+                        setState(() {
+                          _selectedLevel = value == '' ? null : value;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
-  List<Map<String, dynamic>> _getCategoryFilters(BuildContext context) {
-    return [
-      {
-        'label': AppLocalizations.of(context)?.translate('all') ?? 'الكل',
-        'value': 'all',
-        'type': 'category'
-      },
-      {
-        'label': AppLocalizations.of(context)?.translate('machineLearning') ?? 'تعلم الآلة',
-        'value': 'تعلم الآلة',
-        'type': 'category'
-      },
-      {
-        'label': 'معالجة اللغات',
-        'value': 'معالجة اللغات',
-        'type': 'category'
-      },
-      {
-        'label': 'رؤية الحاسوب',
-        'value': 'رؤية الحاسوب',
-        'type': 'category'
-      },
-      {
-        'label': 'البرمجة',
-        'value': 'البرمجة',
-        'type': 'category'
-      },
-      {
-        'label': 'الذكاء التوليدي',
-        'value': 'الذكاء التوليدي',
-        'type': 'category'
-      },
-      {
-        'label': 'التعلم العميق',
-        'value': 'التعلم العميق',
-        'type': 'category'
-      },
-      {
-        'label': 'علم البيانات',
-        'value': 'علم البيانات',
-        'type': 'category'
-      },
-      {
-        'label': 'الأعمال',
-        'value': 'الأعمال',
-        'type': 'category'
-      },
-    ];
-  }
-
-  List<Map<String, dynamic>> _getLevelFilters(BuildContext context) {
-    return [
-      {
-        'label': _getLocalizedLevel('مبتدئ', context),
-        'value': 'مبتدئ',
-        'type': 'level'
-      },
-      {
-        'label': _getLocalizedLevel('متوسط', context),
-        'value': 'متوسط',
-        'type': 'level'
-      },
-      {
-        'label': _getLocalizedLevel('متقدم', context),
-        'value': 'متقدم',
-        'type': 'level'
-      },
-    ];
-  }
-
-  bool _isFilterSelected(String value, CoursesProvider provider) {
-    if (value == 'all') {
-      return provider.selectedCategory == 'الكل';
-    }
-    return provider.selectedCategory == value || provider.selectedLevel == value;
-  }
-
-  void _onFilterPressed(String value, CoursesProvider provider) {
-    if (value == 'all') {
-      provider.filterCourses(category: 'الكل');
-    } else if (['مبتدئ', 'متوسط', 'متقدم'].contains(value)) {
-      provider.filterCourses(level: value);
-    } else {
-      provider.filterCourses(category: value);
-    }
-  }
 
 
   @override

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/course.dart';
 import '../providers/course_provider.dart';
-import '../screens/course_detail_screen.dart';
+import '../screens/unified_course_detail_screen.dart';
 
 class CourseCard extends StatelessWidget {
   final Course course;
@@ -26,7 +26,7 @@ class CourseCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CourseDetailScreen(course: course),
+              builder: (context) => UnifiedCourseDetailScreen(course: course),
             ),
           );
         },
@@ -203,7 +203,7 @@ class CourseCard extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => CourseDetailScreen(
+                                      builder: (context) => UnifiedCourseDetailScreen(
                                         course: course,
                                       ),
                                     ),

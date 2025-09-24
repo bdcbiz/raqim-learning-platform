@@ -241,6 +241,10 @@ class _AIToolsScreenState extends State<AIToolsScreen> {
       appBar: RaqimAppBar(
         title: 'أدوات الذكاء الاصطناعي',
         showLogo: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       backgroundColor: Colors.grey[50],
       body: Column(

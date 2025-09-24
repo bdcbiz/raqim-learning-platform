@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/course_provider.dart';
 import '../models/course.dart';
-import '../widgets/course_card.dart';
-import 'course_detail_screen.dart';
+import '../widgets/common/unified_course_card.dart';
+import 'unified_course_detail_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
 
@@ -176,20 +176,22 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       crossAxisCount: MediaQuery.of(context).size.width > 600
                           ? 3
                           : 2,
-                      childAspectRatio: 1.05,
+                      childAspectRatio: 0.75,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final course = courseProvider.enrolledCourses[index];
-                      return EnrolledCourseCard(
+                      return UnifiedCourseCard(
                         course: course,
+                        showProgress: true,
+                        progress: course.progress?.toDouble() ?? 35,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  CourseDetailScreen(course: course),
+                                  UnifiedCourseDetailScreen(course: course),
                             ),
                           );
                         },
@@ -207,145 +209,3 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 }
 
-class EnrolledCourseCard extends StatelessWidget {
-  final Course course;
-  final VoidCallback onTap;
-
-  const EnrolledCourseCard({
-    super.key,
-    required this.course,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Course thumbnail with progress overlay
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Container(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                      child: const Icon(
-                        Icons.play_circle_outline,
-                        size: 48,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'مسجل',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // Course info
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      course.titleAr,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      course.instructorName,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                    ),
-                    const Spacer(),
-                    // Progress bar
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'التقدم',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            Text(
-                              '0%',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        LinearProgressIndicator(
-                          value: 0.0,
-                          backgroundColor: Colors.grey[300],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Continue button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: onTap,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'متابعة التعلم',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

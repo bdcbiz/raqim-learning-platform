@@ -5,6 +5,7 @@ import '../data/models/course_model.dart';
 import '../features/admin/models/admin_stats.dart';
 import 'database/database_service.dart';
 import 'cache_service.dart';
+import 'mock_data_service.dart';
 
 class UnifiedDataService {
   static final UnifiedDataService _instance = UnifiedDataService._internal();
@@ -12,6 +13,7 @@ class UnifiedDataService {
   UnifiedDataService._internal();
 
   final DatabaseService _databaseService = DatabaseService();
+  final MockDataService _mockDataService = MockDataService();
 
   // Collections
   static const String usersCollection = 'users';
@@ -178,7 +180,7 @@ class UnifiedDataService {
       return _getMockCourses().length;
     } catch (e) {
       print('ERROR UnifiedDataService: Failed to get total courses: $e');
-      return 15; // Mock count
+      return 28; // Updated mock count to match MockDataService
     }
   }
 
@@ -431,71 +433,7 @@ class UnifiedDataService {
   }
 
   List<CourseModel> _getMockCourses() {
-    return [
-      CourseModel(
-        id: '1',
-        title: 'دورة Flutter المتقدمة',
-        description: 'تعلم Flutter من الصفر إلى الاحتراف',
-        thumbnailUrl: 'https://picsum.photos/400/225',
-        instructorId: 'instructor1',
-        instructorName: 'أحمد محمد',
-        instructorBio: 'مطور تطبيقات محترف بخبرة 10 سنوات',
-        level: 'متقدم',
-        category: 'البرمجة',
-        objectives: ['تعلم Flutter', 'إنشاء تطبيقات متقدمة'],
-        requirements: ['معرفة أساسية بالبرمجة'],
-        modules: [],
-        price: 299.99,
-        rating: 4.8,
-        totalRatings: 100,
-        enrolledStudents: 543,
-        totalDuration: Duration(hours: 10),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      CourseModel(
-        id: '2',
-        title: 'تطوير تطبيقات React',
-        description: 'احترف React و React Native',
-        thumbnailUrl: 'https://picsum.photos/400/225',
-        instructorId: 'instructor2',
-        instructorName: 'سارة أحمد',
-        instructorBio: 'خبيرة تطوير واجهات المستخدم',
-        level: 'متوسط',
-        category: 'البرمجة',
-        objectives: ['إتقان React', 'تطوير تطبيقات الهاتف'],
-        requirements: ['معرفة JavaScript'],
-        modules: [],
-        price: 199.99,
-        rating: 4.6,
-        totalRatings: 80,
-        enrolledStudents: 321,
-        totalDuration: Duration(hours: 8),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      CourseModel(
-        id: '3',
-        title: 'التسويق الرقمي الشامل',
-        description: 'استراتيجيات التسويق الرقمي الحديثة',
-        thumbnailUrl: 'https://picsum.photos/400/225',
-        instructorId: 'instructor3',
-        instructorName: 'خالد العمري',
-        instructorBio: 'خبير تسويق رقمي',
-        level: 'مبتدئ',
-        category: 'التسويق',
-        objectives: ['فهم أساسيات التسويق الرقمي', 'إدارة الحملات الإعلانية'],
-        requirements: ['لا يتطلب خبرة سابقة'],
-        modules: [],
-        price: 149.99,
-        rating: 4.7,
-        totalRatings: 150,
-        enrolledStudents: 892,
-        totalDuration: Duration(hours: 6),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
+    return _mockDataService.getAllCourses();
   }
 
   List<Map<String, dynamic>> _getMockNews() {

@@ -34,7 +34,7 @@ import 'features/auth/screens/reset_password_screen.dart';
 import 'features/auth/screens/email_verification_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/courses/screens/courses_list_screen.dart';
-import 'screens/simple_course_detail_screen.dart';
+import 'screens/unified_course_detail_screen.dart';
 import 'features/courses/screens/my_courses_screen.dart';
 import 'features/courses/screens/lesson_player_screen.dart';
 import 'features/certificates/screens/certificates_screen.dart';
@@ -239,7 +239,7 @@ class RaqimApp extends StatelessWidget {
               path: 'course/:courseId',
               builder: (context, state) {
                 final courseId = state.pathParameters['courseId']!;
-                return SimpleCourseDetailScreen(courseId: courseId);
+                return UnifiedCourseDetailScreen(courseId: courseId);
               },
               routes: [
                 GoRoute(
@@ -320,7 +320,7 @@ class RaqimApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/courses',
-          builder: (context, state) => const CoursesListScreen(),
+          builder: (context, state) => const CoursesScreen(),
         ),
         GoRoute(
           path: '/login',
