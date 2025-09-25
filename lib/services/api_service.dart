@@ -2,17 +2,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'mock_data_service.dart';
+import '../models/user_model.dart';
+import '../data/models/course_model.dart';
 
 class ApiService {
   static String get baseUrl {
-    // Use 10.0.2.2 for Android emulator, localhost for web
+    // Use 192.168.1.143 for physical devices, localhost for web
     if (kIsWeb) {
-      return 'http://localhost:5000/api/v1';
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5000/api/v1';
+      return 'http://localhost:8000/api';
     } else {
-      return 'http://localhost:5000/api/v1';
+      // Use computer's local IP address for physical devices
+      return 'http://192.168.1.143:8000/api';
     }
   }
   static String? authToken;
@@ -22,17 +22,6 @@ class ApiService {
     authToken = prefs.getString('auth_token');
   }
 
-  static Future<Map<String, String>> get _headers async {
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (authToken != null) {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-    
-    return headers;
-  }
 
   static Future<void> saveToken(String token) async {
     authToken = token;
@@ -46,386 +35,355 @@ class ApiService {
     await prefs.remove('auth_token');
   }
 
+  // Get auth token from storage
+  static Future<String?> getAuthToken() async {
+    if (authToken != null) return authToken;
+
+    final prefs = await SharedPreferences.getInstance();
+    authToken = prefs.getString('auth_token');
+    return authToken;
+  }
+
+  // Get headers with auth token
+  static Future<Map<String, String>> getHeaders({bool includeAuth = true}) async {
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (includeAuth) {
+      final token = await getAuthToken();
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+    }
+
+    return headers;
+  }
+
+  // Handle API response
+  static Map<String, dynamic> handleResponse(http.Response response) {
+    final data = json.decode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'API Error: ${response.statusCode}');
+    }
+  }
+
   // Auth Methods
   static Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
-    String role = 'student',
+    String? phone,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': name,
-          'email': email,
-          'password': password,
-          'role': role,
-        }),
-      );
+    final headers = await getHeaders(includeAuth: false);
 
-      final data = jsonDecode(response.body);
-      
-      if (response.statusCode == 201) {
-        await saveToken(data['token']);
-        return data;
-      } else if (response.statusCode == 400) {
-        // Handle duplicate user error
-        throw Exception(data['error'] ?? 'Registration failed');
-      } else {
-        throw Exception(data['error'] ?? 'Registration failed');
-      }
-    } catch (e) {
-      throw e;
+    final response = await http.post(
+      Uri.parse('$baseUrl/register'),
+      headers: headers,
+      body: json.encode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'phone': phone,
+      }),
+    );
+
+    final data = handleResponse(response);
+
+    if (data['token'] != null) {
+      await saveToken(data['token']);
     }
+
+    return data;
   }
 
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
+    final headers = await getHeaders(includeAuth: false);
 
-      final data = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        await saveToken(data['token']);
-      }
-      
-      return data;
-    } catch (e) {
-      throw Exception('Login failed: $e');
+    final response = await http.post(
+      Uri.parse('$baseUrl/login'),
+      headers: headers,
+      body: json.encode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    final data = handleResponse(response);
+
+    if (data['token'] != null) {
+      await saveToken(data['token']);
     }
+
+    return data;
   }
 
-  static Future<Map<String, dynamic>> getProfile() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/auth/me'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> logout() async {
+    final headers = await getHeaders();
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get profile: $e');
-    }
+    final response = await http.post(
+      Uri.parse('$baseUrl/logout'),
+      headers: headers,
+    );
+
+    await clearToken();
+
+    return handleResponse(response);
   }
 
-  static Future<void> logout() async {
-    try {
-      await http.post(
-        Uri.parse('$baseUrl/auth/logout'),
-        headers: await _headers,
-      );
-      await clearToken();
-    } catch (e) {
-      throw Exception('Logout failed: $e');
-    }
+  static Future<Map<String, dynamic>> getCurrentUser() async {
+    final headers = await getHeaders();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/user'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String name,
+    String? phone,
+  }) async {
+    final headers = await getHeaders();
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/user/profile'),
+      headers: headers,
+      body: json.encode({
+        'name': name,
+        'phone': phone,
+      }),
+    );
+
+    return handleResponse(response);
   }
 
   // Course Methods
   static Future<Map<String, dynamic>> getCourses({
-    String? category,
-    String? level,
+    int? categoryId,
     String? search,
+    String? isFree,
+    String sortBy = 'created_at',
+    String sortOrder = 'desc',
     int page = 1,
-    int limit = 10,
   }) async {
-    // Use mock data service instead of API
-    try {
-      final mockService = MockDataService();
-      return await mockService.getCourses(
-        category: category,
-        level: level,
-        search: search,
-        page: page,
-        limit: limit,
-      );
-    } catch (e) {
-      throw Exception('Failed to get courses: $e');
+    final headers = await getHeaders(includeAuth: false);
+
+    Map<String, String> queryParams = {
+      'sort_by': sortBy,
+      'sort_order': sortOrder,
+      'page': page.toString(),
+    };
+
+    if (categoryId != null) {
+      queryParams['category_id'] = categoryId.toString();
     }
+    if (search != null && search.isNotEmpty) {
+      queryParams['search'] = search;
+    }
+    if (isFree != null) {
+      queryParams['is_free'] = isFree;
+    }
+
+    final uri = Uri.parse('$baseUrl/courses').replace(queryParameters: queryParams);
+
+    final response = await http.get(uri, headers: headers);
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> getCourse(String courseId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/courses/$courseId'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> getCourse(int id) async {
+    final headers = await getHeaders(includeAuth: false);
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get course: $e');
-    }
+    final response = await http.get(
+      Uri.parse('$baseUrl/courses/$id'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> enrollInCourse(String courseId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/courses/$courseId/enroll'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> getCategories() async {
+    final headers = await getHeaders(includeAuth: false);
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to enroll in course: $e');
-    }
+    final response = await http.get(
+      Uri.parse('$baseUrl/categories'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> getEnrolledCourses() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/courses/enrolled'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> enrollInCourse(int courseId) async {
+    final headers = await getHeaders();
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get enrolled courses: $e');
-    }
+    final response = await http.post(
+      Uri.parse('$baseUrl/courses/$courseId/enroll'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
   }
 
-  // Lesson Methods
-  static Future<Map<String, dynamic>> getLessons(String courseId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/lessons/course/$courseId'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> getMyEnrollments({int page = 1}) async {
+    final headers = await getHeaders();
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get lessons: $e');
-    }
+    final uri = Uri.parse('$baseUrl/my-enrollments').replace(
+      queryParameters: {'page': page.toString()},
+    );
+
+    final response = await http.get(uri, headers: headers);
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> getLesson(String lessonId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/lessons/$lessonId'),
-        headers: await _headers,
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get lesson: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> completeLesson(
-    String lessonId, {
-    int? score,
-    int? timeSpent,
+  static Future<Map<String, dynamic>> updateCourseProgress({
+    required int courseId,
+    required double progress,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/lessons/$lessonId/complete'),
-        headers: await _headers,
-        body: jsonEncode({
-          if (score != null) 'score': score,
-          if (timeSpent != null) 'timeSpent': timeSpent,
-        }),
-      );
+    final headers = await getHeaders();
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to complete lesson: $e');
-    }
+    final response = await http.put(
+      Uri.parse('$baseUrl/courses/$courseId/progress'),
+      headers: headers,
+      body: json.encode({'progress': progress}),
+    );
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> submitQuiz(
-    String lessonId,
-    List<String> answers,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/lessons/$lessonId/quiz/submit'),
-        headers: await _headers,
-        body: jsonEncode({'answers': answers}),
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to submit quiz: $e');
-    }
-  }
-
-  // Progress Methods
-  static Future<Map<String, dynamic>> getCourseProgress(String courseId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/progress/course/$courseId'),
-        headers: await _headers,
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get progress: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> getAllProgress() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/progress'),
-        headers: await _headers,
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get all progress: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> getStatistics() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/progress/statistics'),
-        headers: await _headers,
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get statistics: $e');
-    }
-  }
-
-  // Upload Methods
-  static Future<Map<String, dynamic>> uploadAvatar(String filePath) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/upload/avatar'),
-      );
-      
-      request.headers.addAll(await _headers);
-      request.files.add(await http.MultipartFile.fromPath('avatar', filePath));
-      
-      var response = await request.send();
-      var responseData = await response.stream.toBytes();
-      var responseString = String.fromCharCodes(responseData);
-      
-      return jsonDecode(responseString);
-    } catch (e) {
-      throw Exception('Failed to upload avatar: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> uploadCourseThumbnail(String filePath) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/upload/thumbnail'),
-      );
-      
-      request.headers.addAll(await _headers);
-      request.files.add(await http.MultipartFile.fromPath('thumbnail', filePath));
-      
-      var response = await request.send();
-      var responseData = await response.stream.toBytes();
-      var responseString = String.fromCharCodes(responseData);
-      
-      return jsonDecode(responseString);
-    } catch (e) {
-      throw Exception('Failed to upload thumbnail: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> uploadVideo(String filePath) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/upload/video'),
-      );
-      
-      request.headers.addAll(await _headers);
-      request.files.add(await http.MultipartFile.fromPath('video', filePath));
-      
-      var response = await request.send();
-      var responseData = await response.stream.toBytes();
-      var responseString = String.fromCharCodes(responseData);
-      
-      return jsonDecode(responseString);
-    } catch (e) {
-      throw Exception('Failed to upload video: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> uploadMaterial(String filePath) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/upload/material'),
-      );
-      
-      request.headers.addAll(await _headers);
-      request.files.add(await http.MultipartFile.fromPath('material', filePath));
-      
-      var response = await request.send();
-      var responseData = await response.stream.toBytes();
-      var responseString = String.fromCharCodes(responseData);
-      
-      return jsonDecode(responseString);
-    } catch (e) {
-      throw Exception('Failed to upload material: $e');
-    }
-  }
-
-  // Payment Methods
-  static Future<Map<String, dynamic>> processCoursePayment({
-    required String courseId,
-    required String paymentMethod,
-    Map<String, dynamic>? paymentDetails,
+  // News Methods
+  static Future<Map<String, dynamic>> getNews({
+    String? search,
+    String sortBy = 'created_at',
+    String sortOrder = 'desc',
+    int page = 1,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/payment/process'),
-        headers: await _headers,
-        body: jsonEncode({
-          'courseId': courseId,
-          'paymentMethod': paymentMethod,
-          'paymentDetails': paymentDetails ?? {},
-        }),
-      );
+    final headers = await getHeaders(includeAuth: false);
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to process payment: $e');
+    Map<String, String> queryParams = {
+      'sort_by': sortBy,
+      'sort_order': sortOrder,
+      'page': page.toString(),
+    };
+
+    if (search != null && search.isNotEmpty) {
+      queryParams['search'] = search;
     }
+
+    final uri = Uri.parse('$baseUrl/news').replace(queryParameters: queryParams);
+
+    final response = await http.get(uri, headers: headers);
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> getPaymentHistory() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/payment/history'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> getNewsItem(int id) async {
+    final headers = await getHeaders(includeAuth: false);
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to get payment history: $e');
-    }
+    final response = await http.get(
+      Uri.parse('$baseUrl/news/$id'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> verifyPayment(String transactionId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/payment/verify/$transactionId'),
-        headers: await _headers,
-      );
+  static Future<Map<String, dynamic>> getLatestNews() async {
+    final headers = await getHeaders(includeAuth: false);
 
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw Exception('Failed to verify payment: $e');
+    final response = await http.get(
+      Uri.parse('$baseUrl/news/latest'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
+  }
+
+  // Jobs Methods
+  static Future<Map<String, dynamic>> getJobs({
+    String? search,
+    String? type,
+    String? location,
+    String sortBy = 'created_at',
+    String sortOrder = 'desc',
+    int page = 1,
+  }) async {
+    final headers = await getHeaders(includeAuth: false);
+
+    Map<String, String> queryParams = {
+      'sort_by': sortBy,
+      'sort_order': sortOrder,
+      'page': page.toString(),
+    };
+
+    if (search != null && search.isNotEmpty) {
+      queryParams['search'] = search;
     }
+    if (type != null && type.isNotEmpty) {
+      queryParams['type'] = type;
+    }
+    if (location != null && location.isNotEmpty) {
+      queryParams['location'] = location;
+    }
+
+    final uri = Uri.parse('$baseUrl/jobs').replace(queryParameters: queryParams);
+
+    final response = await http.get(uri, headers: headers);
+
+    return handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> getJob(int id) async {
+    final headers = await getHeaders(includeAuth: false);
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/jobs/$id'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> getLatestJobs() async {
+    final headers = await getHeaders(includeAuth: false);
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/jobs/latest'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> getJobTypes() async {
+    final headers = await getHeaders(includeAuth: false);
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/jobs/types'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> getJobLocations() async {
+    final headers = await getHeaders(includeAuth: false);
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/jobs/locations'),
+      headers: headers,
+    );
+
+    return handleResponse(response);
   }
 }

@@ -1,18 +1,13 @@
-// Temporarily using mock data while Firebase is disabled due to web compatibility issues
-// TODO: Re-enable Firebase when compatibility issues are resolved
 import '../models/user_model.dart';
 import '../data/models/course_model.dart';
-import '../features/admin/models/admin_stats.dart';
-import 'database/database_service.dart';
-import 'cache_service.dart';
 import 'mock_data_service.dart';
+import 'api_service.dart';
 
 class UnifiedDataService {
   static final UnifiedDataService _instance = UnifiedDataService._internal();
   factory UnifiedDataService() => _instance;
   UnifiedDataService._internal();
 
-  final DatabaseService _databaseService = DatabaseService();
   final MockDataService _mockDataService = MockDataService();
 
   // Collections
@@ -71,22 +66,41 @@ class UnifiedDataService {
 
   Future<List<CourseModel>> getAllCourses() async {
     try {
-      // Temporarily returning mock data until Firebase is re-enabled
-      print('DEBUG UnifiedDataService: Using mock courses data (Firebase temporarily disabled)');
-      return _getMockCourses();
+      print('DEBUG UnifiedDataService: Fetching courses from Laravel API');
+      final response = await ApiService.getCourses();
+
+      if (response['success'] == true) {
+        final coursesData = response['data'] as List;
+        return coursesData.map((courseData) => CourseModel.fromJson(courseData)).toList();
+      } else {
+        throw Exception('Failed to get courses from API');
+      }
     } catch (e) {
       print('ERROR UnifiedDataService: Failed to get courses: $e');
+      print('DEBUG UnifiedDataService: Falling back to mock data');
       return _getMockCourses();
     }
   }
 
   Future<CourseModel?> getCourseById(String courseId) async {
     try {
-      final courses = _getMockCourses();
-      return courses.firstWhere((c) => c.id == courseId, orElse: () => courses.first);
+      print('DEBUG UnifiedDataService: Fetching course $courseId from Laravel API');
+      final response = await ApiService.getCourse(int.parse(courseId));
+
+      if (response['success'] == true) {
+        return CourseModel.fromJson(response['data']);
+      } else {
+        throw Exception('Failed to get course from API');
+      }
     } catch (e) {
       print('ERROR UnifiedDataService: Failed to get course: $e');
-      return null;
+      print('DEBUG UnifiedDataService: Falling back to mock data');
+      final courses = _getMockCourses();
+      try {
+        return courses.firstWhere((c) => c.id == courseId);
+      } catch (e) {
+        return courses.isNotEmpty ? courses.first : null;
+      }
     }
   }
 
@@ -203,24 +217,6 @@ class UnifiedDataService {
     }
   }
 
-  Future<AdminStats> getAdminStats() async {
-    try {
-      // Mock stats
-      return AdminStats(
-        totalUsers: await getTotalUsers(),
-        totalCourses: await getTotalCourses(),
-        totalEnrollments: await getTotalEnrollments(),
-        totalRevenue: await getTotalRevenue(null, null),
-        newUsersToday: 5,
-        newEnrollmentsToday: 12,
-        revenueToday: 845.50,
-        averageRating: 4.6,
-      );
-    } catch (e) {
-      print('ERROR UnifiedDataService: Failed to get admin stats: $e');
-      throw Exception('Failed to get admin stats: $e');
-    }
-  }
 
   // ======================== CONTENT MANAGEMENT ========================
 
@@ -255,13 +251,22 @@ class UnifiedDataService {
 
   Future<List<Map<String, dynamic>>> getAllNews() async {
     try {
+      print('DEBUG UnifiedDataService: Fetching news from Laravel API');
+      final response = await ApiService.getNews();
+
+      if (response['success'] == true) {
+        final newsData = response['data'] as List;
+        return newsData.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to get news from API');
+      }
+    } catch (e) {
+      print('ERROR UnifiedDataService: Failed to get news: $e');
+      print('DEBUG UnifiedDataService: Falling back to mock data');
       if (_mockNews.isEmpty) {
         _mockNews.addAll(_getMockNews());
       }
       return _mockNews;
-    } catch (e) {
-      print('ERROR UnifiedDataService: Failed to get news: $e');
-      return _getMockNews();
     }
   }
 
@@ -284,13 +289,22 @@ class UnifiedDataService {
 
   Future<List<Map<String, dynamic>>> getAllCategories() async {
     try {
+      print('DEBUG UnifiedDataService: Fetching categories from Laravel API');
+      final response = await ApiService.getCategories();
+
+      if (response['success'] == true) {
+        final categoriesData = response['categories'] as List;
+        return categoriesData.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to get categories from API');
+      }
+    } catch (e) {
+      print('ERROR UnifiedDataService: Failed to get categories: $e');
+      print('DEBUG UnifiedDataService: Falling back to mock data');
       if (_mockCategories.isEmpty) {
         _mockCategories.addAll(_getMockCategories());
       }
       return _mockCategories;
-    } catch (e) {
-      print('ERROR UnifiedDataService: Failed to get categories: $e');
-      return _getMockCategories();
     }
   }
 
@@ -382,6 +396,24 @@ class UnifiedDataService {
     }
   }
 
+  // ======================== SYNC SERVICE METHODS ========================
+
+  Future<List<UserModel>> getUsers() async {
+    return await getAllUsers();
+  }
+
+  Future<List<CourseModel>> getCourses() async {
+    return await getAllCourses();
+  }
+
+  Future<List<Map<String, dynamic>>> getNews() async {
+    return await getAllNews();
+  }
+
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    return await getAllCategories();
+  }
+
   // ======================== REAL-TIME LISTENERS ========================
 
   Stream<List<UserModel>> getUsersStream() {
@@ -396,10 +428,6 @@ class UnifiedDataService {
         .asyncMap((courses) async => courses);
   }
 
-  Stream<AdminStats> getAdminStatsStream() {
-    return Stream.periodic(const Duration(minutes: 5), (i) => getAdminStats())
-        .asyncMap((future) => future);
-  }
 
   // ======================== MOCK DATA FALLBACKS ========================
 

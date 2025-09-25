@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart';
 import '../providers/courses_provider.dart';
 import '../../../services/sync_service.dart';
+import '../../../services/api_service.dart';
 import '../../../data/models/course_model.dart' as data_models;
 import '../../../widgets/common/course_chapters_list.dart';
 
@@ -20,11 +21,13 @@ class CourseContentScreen extends StatefulWidget {
 
 class _CourseContentScreenState extends State<CourseContentScreen> {
   data_models.CourseModel? course;
-  // VideoPlayerController? _videoController;
+  VideoPlayerController? _videoController;
   bool _isVideoLoading = false;
   int _selectedModuleIndex = 0;
   int? _selectedLessonIndex;
   String? _selectedVideoUrl;
+  bool _isLoading = true;
+  bool _showVideoPlayer = false;
 
   @override
   void initState() {
@@ -34,21 +37,107 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
 
   @override
   void dispose() {
-    // _videoController?.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
   Future<void> _loadCourse() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      // For now, we'll use mock data since there are type conflicts
-      setState(() {
-        course = _createMockCourse();
-      });
+      // Try to fetch real data from API
+      print('Loading course with ID: ${widget.courseId}');
+      final response = await ApiService.getCourse(int.tryParse(widget.courseId) ?? 1);
+
+      print('API Response: $response');
+
+      if (response['success'] == true && response['data'] != null) {
+        print('Course loaded successfully from API');
+        final courseData = response['data'];
+        print('Course data modules count: ${courseData['modules']?.length ?? 0}');
+
+        setState(() {
+          course = _parseCourseFromApi(courseData);
+          _isLoading = false;
+        });
+
+        print('Parsed course modules count: ${course?.modules.length ?? 0}');
+      } else {
+        print('Failed to load course, using mock data');
+        // Fallback to mock data
+        setState(() {
+          course = _createMockCourse();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
+      print('Error loading course from API: $e');
+      print('Using mock data as fallback');
+      // Fallback to mock data
       setState(() {
         course = _createMockCourse();
+        _isLoading = false;
       });
     }
+  }
+
+  data_models.CourseModel _parseCourseFromApi(Map<String, dynamic> courseData) {
+    List<data_models.CourseModule> modules = [];
+
+    print('Parsing course data: ${courseData.keys}');
+
+    if (courseData['modules'] != null) {
+      print('Found ${courseData['modules'].length} modules');
+      for (var moduleData in courseData['modules']) {
+        List<data_models.Lesson> lessons = [];
+
+        if (moduleData['lessons'] != null) {
+          print('Module "${moduleData['title_ar']}" has ${moduleData['lessons'].length} lessons');
+          for (var lessonData in moduleData['lessons']) {
+            print('Lesson: ${lessonData['title_ar']} - Video: ${lessonData['video_url']}');
+            lessons.add(
+              data_models.Lesson(
+                id: lessonData['id'].toString(),
+                title: lessonData['title_ar'] ?? lessonData['title_en'] ?? 'درس',
+                duration: Duration(seconds: lessonData['duration'] ?? 600),
+                videoUrl: lessonData['video_url'],
+                content: lessonData['description_ar'] ?? lessonData['content_ar'] ?? '',
+              ),
+            );
+          }
+        }
+
+        modules.add(
+          data_models.CourseModule(
+            id: moduleData['id'].toString(),
+            title: moduleData['title_ar'] ?? moduleData['title_en'] ?? 'وحدة',
+            duration: Duration(hours: 1), // Calculate from lessons if needed
+            lessons: lessons,
+          ),
+        );
+      }
+    }
+
+    return data_models.CourseModel(
+      id: courseData['id'].toString(),
+      title: courseData['title_ar'] ?? courseData['title_en'] ?? 'دورة تدريبية',
+      description: courseData['description_ar'] ?? courseData['description_en'] ?? '',
+      thumbnailUrl: courseData['thumbnail'] ?? 'https://picsum.photos/400/225',
+      instructorId: courseData['instructor_id']?.toString() ?? '1',
+      instructorName: courseData['instructor']?['name'] ?? 'المدرب',
+      instructorBio: courseData['instructor']?['bio'] ?? '',
+      level: courseData['level'] ?? 'مبتدئ',
+      category: courseData['category']?['name_ar'] ?? 'تصنيف',
+      objectives: [],
+      requirements: [],
+      modules: modules,
+      price: double.tryParse(courseData['price']?.toString() ?? '0') ?? 0,
+      totalDuration: Duration(hours: courseData['duration_hours'] ?? 1),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
   }
 
   data_models.CourseModel _createMockCourse() {
@@ -124,21 +213,53 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     }
 
     setState(() {
+      _isVideoLoading = true;
       _selectedVideoUrl = videoUrl;
     });
 
-    // TODO: Implement actual video player later
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('سيتم تشغيل: ${videoUrl.split('/').last}')),
-    );
+    try {
+      // Dispose of previous controller
+      await _videoController?.dispose();
+
+      // Create new controller
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+
+      // Initialize the controller
+      await _videoController!.initialize();
+
+      setState(() {
+        _isVideoLoading = false;
+        _showVideoPlayer = true;
+      });
+
+      // Start playing automatically
+      _videoController!.play();
+
+    } catch (e) {
+      setState(() {
+        _isVideoLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في تحميل الفيديو: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (course == null) {
+    if (_isLoading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (course == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('لا توجد بيانات للدورة'),
         ),
       );
     }
@@ -154,6 +275,30 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
             // Header
             _buildHeader(),
 
+            // Video Player Section
+            if (_showVideoPlayer && _videoController != null)
+              _buildVideoPlayer(),
+
+            // Loading indicator for video
+            if (_isVideoLoading)
+              Container(
+                height: 200,
+                color: Colors.black,
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 16),
+                      Text(
+                        'جاري تحميل الفيديو...',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             // New Course Chapters List with modern design
             Expanded(
               child: Padding(
@@ -162,10 +307,9 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   courseTitle: course!.title,
                   chapters: chapters,
                   onChapterTap: (index) {
-                    // Handle chapter selection
-                    if (index < course!.modules.length &&
-                        course!.modules[index].lessons.isNotEmpty) {
-                      _playVideo(course!.modules[index].lessons[0].videoUrl);
+                    // Play the video for the selected lesson
+                    if (index < chapters.length) {
+                      _playVideo(chapters[index].videoUrl);
                     }
                   },
                 ),
@@ -198,6 +342,118 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     }
 
     return chapters;
+  }
+
+  Widget _buildVideoPlayer() {
+    if (_videoController == null) return const SizedBox.shrink();
+
+    return Container(
+      height: 250,
+      width: double.infinity,
+      color: Colors.black,
+      child: Stack(
+        children: [
+          // Video Player
+          Center(
+            child: AspectRatio(
+              aspectRatio: _videoController!.value.aspectRatio,
+              child: VideoPlayer(_videoController!),
+            ),
+          ),
+
+          // Video Controls
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Play/Pause Button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_videoController!.value.isPlaying) {
+                          _videoController!.pause();
+                        } else {
+                          _videoController!.play();
+                        }
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        _videoController!.value.isPlaying
+                            ? Icons.pause
+                            : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Video Progress
+                  Expanded(
+                    child: VideoProgressIndicator(
+                      _videoController!,
+                      allowScrubbing: true,
+                      colors: const VideoProgressColors(
+                        playedColor: Color(0xFF667eea),
+                        bufferedColor: Colors.grey,
+                        backgroundColor: Colors.white24,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Close Button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _showVideoPlayer = false;
+                        _videoController?.pause();
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildHeader() {

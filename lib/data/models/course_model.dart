@@ -91,34 +91,40 @@ class CourseModel {
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      thumbnailUrl: json['thumbnailUrl'] ?? json['thumbnail'] ?? 'https://picsum.photos/400/225',
-      promoVideoUrl: json['promoVideoUrl'] ?? json['videoUrl'],
-      instructorId: json['instructorId'] ?? json['instructor']?['_id'] ?? '',
-      instructorName: json['instructorName'] ?? json['instructor']?['name'] ?? 'مدرس',
-      instructorBio: json['instructorBio'] ?? json['instructor']?['bio'] ?? '',
-      instructorPhotoUrl: json['instructorPhotoUrl'] ?? json['instructor']?['avatar'],
+      thumbnailUrl: json['thumbnailUrl'] ?? json['thumbnail_url'] ?? 'https://picsum.photos/400/225',
+      promoVideoUrl: json['promoVideoUrl'] ?? json['preview_video_url'],
+      instructorId: json['instructorId'] ?? json['instructor']?['_id'] ?? '1',
+      instructorName: json['instructorName'] ?? json['instructor_name'] ?? 'مدرس',
+      instructorBio: json['instructorBio'] ?? json['instructor_bio'] ?? '',
+      instructorPhotoUrl: json['instructorPhotoUrl'] ?? json['instructor_avatar'],
       level: json['level'] ?? 'مبتدئ',
       category: json['category'] ?? 'عام',
-      objectives: json['objectives'] != null ? List<String>.from(json['objectives']) : [],
-      requirements: json['requirements'] != null ? List<String>.from(json['requirements']) : [],
+      objectives: json['objectives'] != null ? List<String>.from(json['objectives']) :
+                  json['what_will_learn'] != null ? List<String>.from(json['what_will_learn']) : [],
+      requirements: json['requirements'] != null ? List<String>.from(json['requirements']) :
+                    json['target_audience'] != null ? List<String>.from(json['target_audience']) : [],
       modules: json['modules'] != null 
           ? (json['modules'] as List).map((m) => CourseModule.fromJson(m)).toList()
           : [],
-      price: (json['price'] ?? 0).toDouble(),
-      rating: (json['rating'] ?? 0).toDouble(),
-      totalRatings: json['totalRatings'] ?? json['ratingsCount'] ?? 0,
-      enrolledStudents: json['enrolledStudents'] ?? json['studentsCount'] ?? 0,
-      totalDuration: Duration(hours: json['duration'] ?? 1),
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt']) 
-          : DateTime.now(),
-      isFree: json['isFree'] ?? json['price'] == 0 ?? false,
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      rating: double.tryParse(json['rating']?.toString() ?? '0') ?? 0.0,
+      totalRatings: json['totalRatings'] ?? json['reviews_count'] ?? 0,
+      enrolledStudents: json['enrolledStudents'] ?? json['enrolled_count'] ?? 0,
+      totalDuration: Duration(hours: json['duration'] ?? json['duration_hours'] ?? 1),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : json['created_at'] != null
+              ? DateTime.parse(json['created_at'])
+              : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'])
+              : DateTime.now(),
+      isFree: json['isFree'] ?? json['is_free'] ?? (json['price']?.toString() == '0.00') ?? false,
       language: json['language'] ?? 'ar',
       reviews: (json['reviews'] as List?)
               ?.map((r) => Review.fromJson(r))
@@ -153,7 +159,7 @@ class CourseModule {
 
   factory CourseModule.fromJson(Map<String, dynamic> json) {
     return CourseModule(
-      id: json['id'],
+      id: json['id']?.toString() ?? '',
       title: json['title'],
       lessons: (json['lessons'] as List)
           .map((l) => Lesson.fromJson(l))
@@ -199,7 +205,7 @@ class Lesson {
 
   factory Lesson.fromJson(Map<String, dynamic> json) {
     return Lesson(
-      id: json['id'],
+      id: json['id']?.toString() ?? '',
       title: json['title'],
       videoUrl: json['videoUrl'],
       content: json['content'],
@@ -232,7 +238,7 @@ class Quiz {
 
   factory Quiz.fromJson(Map<String, dynamic> json) {
     return Quiz(
-      id: json['id'],
+      id: json['id']?.toString() ?? '',
       questions: (json['questions'] as List)
           .map((q) => Question.fromJson(q))
           .toList(),
@@ -268,7 +274,7 @@ class Question {
 
   factory Question.fromJson(Map<String, dynamic> json) {
     return Question(
-      id: json['id'],
+      id: json['id']?.toString() ?? '',
       question: json['question'],
       options: List<String>.from(json['options']),
       correctAnswer: json['correctAnswer'],
@@ -310,11 +316,11 @@ class Review {
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-      id: json['id'],
+      id: json['id']?.toString() ?? '',
       userId: json['userId'],
       userName: json['userName'],
       userPhotoUrl: json['userPhotoUrl'],
-      rating: json['rating'].toDouble(),
+      rating: double.tryParse(json['rating']?.toString() ?? '0') ?? 0.0,
       comment: json['comment'],
       createdAt: DateTime.parse(json['createdAt']),
     );
