@@ -20,6 +20,8 @@ import '../../../providers/course_provider.dart';
 import '../../../services/auth/auth_interface.dart';
 import '../../../screens/unified_course_detail_screen.dart';
 import '../../jobs/screens/jobs_list_screen.dart';
+import '../../../widgets/common/ai_tool_card.dart';
+import '../../ai_tools/models/ai_tool_model.dart';
 
 
 class ModernHomeScreen extends StatefulWidget {
@@ -139,47 +141,6 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
                 },
               ),
 
-              // Temporary Admin Access Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF667eea).withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: InkWell(
-                    onTap: () => context.go('/admin'),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.admin_panel_settings, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          '🚀 إدارة النظام - اختبار ربط البيانات',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
 
               // Search Bar
               Padding(
@@ -284,6 +245,48 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _buildCoursesGrid(courseProvider),
+              ),
+
+              const SizedBox(height: 32),
+
+              // AI Tools Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'أدوات الذكاء الاصطناعي',
+                      style: ResponsiveAppTextStyles.h3(context),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.push('/ai-tools');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'عرض الكل',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.primaryColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // AI Tools List
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildAIToolsGrid(),
               ),
 
               const SizedBox(height: 32),
@@ -738,6 +741,105 @@ class _ModernHomeScreenState extends State<ModernHomeScreen> {
     );
   }
 
+  Widget _buildAIToolsGrid() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Sample AI Tools data - using popular tools from AI Tools screen
+    final sampleAITools = [
+      const AITool(
+        id: '1',
+        name: 'ChatGPT',
+        description: 'نموذج ذكي للمحادثة وإنشاء النصوص',
+        category: 'معالجة النصوص',
+        iconData: Icons.chat,
+        color: Color(0xFF10A37F),
+        url: 'https://chat.openai.com',
+        isPopular: true,
+      ),
+      const AITool(
+        id: '2',
+        name: 'Claude',
+        description: 'مساعد ذكي للمحادثة والتحليل',
+        category: 'معالجة النصوص',
+        iconData: Icons.psychology,
+        color: Color(0xFFD97706),
+        url: 'https://claude.ai',
+        isPopular: true,
+      ),
+      const AITool(
+        id: '3',
+        name: 'Midjourney',
+        description: 'إنشاء الصور بالذكاء الاصطناعي',
+        category: 'الصور والرسوم',
+        iconData: Icons.palette,
+        color: Color(0xFF7C3AED),
+        url: 'https://midjourney.com',
+        isPopular: true,
+      ),
+      const AITool(
+        id: '4',
+        name: 'GitHub Copilot',
+        description: 'مساعد البرمجة الذكي',
+        category: 'التطوير والبرمجة',
+        iconData: Icons.code,
+        color: Color(0xFF238636),
+        url: 'https://github.com/features/copilot',
+        isPopular: true,
+      ),
+    ];
+
+    if (kIsWeb || screenWidth > 600) {
+      // Desktop/Tablet: Show in a horizontal row
+      return SizedBox(
+        height: 200,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(left: 16, right: 8),
+          itemCount: sampleAITools.length,
+          itemBuilder: (context, index) {
+            final aiTool = sampleAITools[index];
+            return Container(
+              width: 220,
+              margin: EdgeInsets.only(
+                left: index == 0 ? 0 : 8,
+                right: index == sampleAITools.length - 1 ? 0 : 12,
+              ),
+              child: AIToolCard(
+                aiTool: aiTool,
+                onTap: null, // Use default URL launch functionality
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      // Mobile: Show in horizontal scroll with smaller cards
+      return SizedBox(
+        height: 180,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(left: 16, right: 8),
+          itemCount: sampleAITools.length,
+          itemBuilder: (context, index) {
+            final aiTool = sampleAITools[index];
+            return Container(
+              width: screenWidth * 0.75,
+              margin: EdgeInsets.only(
+                left: index == 0 ? 0 : 8,
+                right: index == sampleAITools.length - 1 ? 0 : 12,
+              ),
+              child: AIToolCard(
+                aiTool: aiTool,
+                onTap: null, // Use default URL launch functionality
+              ),
+            );
+          },
+        ),
+      );
+    }
+  }
 
   void _showApplicationSuccessSnackBar(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(

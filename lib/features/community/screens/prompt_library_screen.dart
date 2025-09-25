@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:io' show Platform;
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/common/raqim_app_bar.dart';
+import '../../../widgets/common/modern_search_field.dart';
 import '../models/prompt_post.dart';
 import '../providers/community_provider.dart';
 
@@ -19,6 +21,7 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
   String _selectedCategory = 'الكل';
   String _selectedDifficulty = 'الكل';
   String _searchQuery = '';
+  bool _showFilters = false;
   final TextEditingController _searchController = TextEditingController();
 
   final List<String> _categories = [
@@ -95,7 +98,7 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -103,93 +106,130 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
             ),
             child: Column(
               children: [
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'ابحث عن البرومبت...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Filters
-                Row(
+                // Modern Search Bar with Filter Button
+                Stack(
                   children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedCategory,
-                        decoration: InputDecoration(
-                          labelText: 'الفئة',
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        items: _categories.map((category) {
-                          return DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCategory = value!;
-                          });
-                        },
-                      ),
+                    ModernSearchField(
+                      controller: _searchController,
+                      hintText: 'ابحث عن البرومبت...',
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
+                      suffixIcon: Icons.filter_list,
+                      onSuffixIconTap: () {
+                        setState(() {
+                          _showFilters = !_showFilters;
+                        });
+                      },
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedDifficulty,
-                        decoration: InputDecoration(
-                          labelText: 'المستوى',
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                    // Clear button overlay when text is not empty
+                    if (_searchController.text.isNotEmpty)
+                      Positioned(
+                        right: 50,
+                        top: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color: Colors.grey[600],
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
                         ),
-                        items: _difficulties.map((difficulty) {
-                          return DropdownMenuItem(
-                            value: difficulty,
-                            child: Text(difficulty),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedDifficulty = value!;
-                          });
-                        },
                       ),
-                    ),
                   ],
+                ),
+                // Animated Filter Section
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: _showFilters ? null : 0,
+                  child: _showFilters
+                      ? Container(
+                          margin: const EdgeInsets.only(top: 16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedCategory,
+                                  decoration: InputDecoration(
+                                    labelText: 'الفئة',
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(color: Colors.grey[300]!),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  items: _categories.map((category) {
+                                    return DropdownMenuItem(
+                                      value: category,
+                                      child: Text(category),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedCategory = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedDifficulty,
+                                  decoration: InputDecoration(
+                                    labelText: 'المستوى',
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(color: Colors.grey[300]!),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  items: _difficulties.map((difficulty) {
+                                    return DropdownMenuItem(
+                                      value: difficulty,
+                                      child: Text(difficulty),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedDifficulty = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -287,7 +327,7 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -306,7 +346,7 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
                   backgroundImage: prompt.authorAvatar != null
                       ? NetworkImage(prompt.authorAvatar!)
                       : null,
-                  backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primaryColor.withOpacity(0.1),
                   child: prompt.authorAvatar == null
                       ? Text(
                           prompt.authorName.isNotEmpty
@@ -452,7 +492,7 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -523,7 +563,27 @@ class _PromptLibraryScreenState extends State<PromptLibraryScreen>
         context.read<CommunityProvider>().copyPrompt(prompt.id);
         break;
       case 'share':
-        // Implement sharing functionality
+        final shareText = 'برومبت رائع: ${prompt.title}\n\n${prompt.promptText}\n\nتطبيق رقيم للتعلم';
+
+        if (Platform.isAndroid || Platform.isIOS) {
+          // For mobile platforms
+          Clipboard.setData(ClipboardData(text: shareText));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم نسخ البرومبت للحافظة - يمكنك مشاركته الآن'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // For web platform - copy to clipboard
+          Clipboard.setData(ClipboardData(text: shareText));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم نسخ البرومبت للحافظة'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         break;
     }
   }
@@ -558,10 +618,11 @@ class PromptDetailsDialog extends StatelessWidget {
           maxHeight: MediaQuery.of(context).size.height * 0.8,
         ),
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Header
             Row(
               children: [
@@ -632,7 +693,7 @@ class PromptDetailsDialog extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -679,7 +740,7 @@ class PromptDetailsDialog extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
